@@ -11,6 +11,19 @@ let viewMode = '2D'; // '2D' or '3D'
 // Three.js Globals
 let scene, camera, renderer, globe;
 let aircraftMarkers = {}; // {flight_id: mesh}
+let pathLines = {}; // {flight_id: line}
+
+const CITY_COORDS = {
+    'IST': [0, 0],
+    'ADB': [-30, -20],
+    'AYT': [20, -30],
+    'ESB': [40, 5],
+    'LHR': [-120, 80],
+    'CDG': [-100, 60],
+    'FRA': [-80, 70],
+    'JFK': [-300, 40],
+    'DXB': [120, -40]
+};
 
 // --- API Calls ---
 async function fetchScenario() {
@@ -102,25 +115,30 @@ async function triggerStressTest() {
 // --- 3D STRATEGIC VIEW (Three.js) ---
 function initThreeScene() {
     const container = document.getElementById('three-container');
+    if (!container) return;
+    
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    scene.background = new THREE.Color(0x020617);
+    
+    camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 2000);
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    
+    // v17.3 Fix: Ensure size is calculated after potential layout shifts
+    const width = container.clientWidth || 800;
+    const height = container.clientHeight || 600;
+    renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
 
-    // Add a simple grid/base representing the airspace
-    const grid = new THREE.GridHelper(200, 20, 0x334155, 0x1e293b);
+    const grid = new THREE.GridHelper(400, 40, 0x334155, 0x1e293b);
     grid.rotation.x = Math.PI / 2;
     scene.add(grid);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-    const pointLight = new THREE.PointLight(0x0ea5e9, 1);
-    pointLight.position.set(50, 50, 50);
-    scene.add(pointLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const light = new THREE.PointLight(0x0ea5e9, 1.5, 500);
+    light.position.set(0, 0, 100);
+    scene.add(light);
 
-    camera.position.z = 100;
-    camera.position.y = -50;
+    camera.position.set(0, -120, 180);
     camera.lookAt(0, 0, 0);
 
     animateThree();
@@ -128,39 +146,90 @@ function initThreeScene() {
 
 function animateThree() {
     requestAnimationFrame(animateThree);
-    renderer.render(scene, camera);
+    if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+    }
+}
+
+function drawFlightPath(flight_id, origin, dest) {
+    if (pathLines[flight_id]) return;
+    const start = CITY_COORDS[origin] || [0, 0];
+    const end = CITY_COORDS[dest] || [50, 50];
+    const points = [];
+    points.push(new THREE.Vector3(start[0], start[1], 0));
+    const midX = (start[0] + end[0]) / 2;
+    const midY = (start[1] + end[1]) / 2;
+    points.push(new THREE.Vector3(midX, midY, 20));
+    points.push(new THREE.Vector3(end[0], end[1], 0));
+    const curve = new THREE.CatmullRomCurve3(points);
+    const geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(20));
+    const material = new THREE.LineBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.3 });
+    const line = new THREE.Line(geometry, material);
+    scene.add(line);
+    pathLines[flight_id] = line;
 }
 
 function update3DMarkers() {
-    if (!scene) return;
+    if (!scene || !fleetData) return;
     
-    fleetData.forEach((f, idx) => {
+    fleetData.forEach((f) => {
+        const origin = CITY_COORDS[f.origin] || [0, 0];
+        const dest = CITY_COORDS[f.destination] || [10, 10];
+        drawFlightPath(f.flight_id, f.origin, f.destination);
+
         if (!aircraftMarkers[f.flight_id]) {
-            const geometry = new THREE.ConeGeometry(1, 4, 3);
-            const material = new THREE.MeshPhongMaterial({ color: f.assigned_delay > 0 ? 0xf43f5e : 0x0ea5e9 });
+            const geometry = new THREE.ConeGeometry(2, 6, 3);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: f.assigned_delay > 0 ? 0xf43f5e : 0x0ea5e9,
+                emissive: f.assigned_delay > 0 ? 0x991b1b : 0x075985,
+                emissiveIntensity: 0.5
+            });
             const mesh = new THREE.Mesh(geometry, material);
             scene.add(mesh);
             aircraftMarkers[f.flight_id] = mesh;
         }
         
-        // Mock positioning aircraft in a row for demo visual
         const mesh = aircraftMarkers[f.flight_id];
-        const x = (idx % 10) * 15 - 75;
-        const y = Math.floor(idx / 10) * 15 - 75;
-        const z = 10 + (f.assigned_delay ? -5 : 0);
-        mesh.position.set(x, y, z);
-        mesh.rotation.z += 0.02;
+        const progress = (f.load_factor || 0.5) * 0.8; 
+        const posX = origin[0] + (dest[0] - origin[0]) * progress;
+        const posY = origin[1] + (dest[1] - origin[1]) * progress;
+        const posZ = 15;
+
+        mesh.position.set(posX, posY, posZ);
+        mesh.lookAt(new THREE.Vector3(dest[0], dest[1], 0));
+        mesh.rotateX(Math.PI / 2);
+        
+        if (f.assigned_delay > 0) {
+            mesh.scale.setScalar(1 + Math.sin(Date.now() * 0.005) * 0.2);
+        } else {
+            mesh.scale.setScalar(1);
+        }
     });
 }
 
 function setViewMode(mode) {
     viewMode = mode;
+    const container = document.getElementById('three-container');
+    
+    document.body.classList.toggle('strategic-3d-active', mode === '3D');
     document.getElementById('toggle-2d').classList.toggle('active', mode === '2D');
     document.getElementById('toggle-3d').classList.toggle('active', mode === '3D');
-    document.getElementById('three-container').classList.toggle('hidden', mode === '2D');
     
-    if (mode === '3D' && !scene) initThreeScene();
-    if (mode === '3D') update3DMarkers();
+    if (container) {
+        container.classList.toggle('hidden', mode === '2D');
+        if (mode === '3D') {
+            if (!scene) initThreeScene();
+            // v17.4: Force sync on switch
+            if (renderer && camera) {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                update3DMarkers();
+            }
+        }
+    }
 }
 
 // --- UI Logic ---
