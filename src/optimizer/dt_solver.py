@@ -18,7 +18,7 @@ class DigitalTwinSolver:
         return self.solve_winning(max_time_sec=max_time_sec)
 
     def solve_winning(self, max_time_sec=60, contrail_penalty_weight=500):
-        logger.info(f"--- Scientific DigitalTwin Solver v8.0 Basliyor (Contrail Weight: {contrail_penalty_weight}) ---")
+        logger.info(f"--- Aviation Excellence v15.0 SOLVER (Contrail Weight: {contrail_penalty_weight}) ---")
         model = cp_model.CpModel()
         
         # 1. SETS & INDICES
@@ -54,58 +54,51 @@ class DigitalTwinSolver:
             model.Add(sum(x[f, a] for a in A) + z[f] == 1)
             model.Add(sum(y[f, k] for k in K) + z[f] == 1)
             
+            # Capacity & Cert Compliance
             for a in A:
                 if self.flights.loc[f, 'passenger_count'] > self.flights.loc[f, 'ac_capacity']:
                     model.Add(x[f, a] == 0)
-
             for k in K:
                 if self.flights.loc[f, 'ac_cat'] != self.flights.loc[f, 'crew_cert']:
                     model.Add(y[f, k] == 0)
 
-        # (K2/K10) Aircraft Flow & TAT
+        # 🧪 v15.0 Excellence: Dynamic Turnaround & Maintenance Routing
         for a in A:
+            # Aircraft Flow & Maintenance Cap
+            total_block_time = sum(x[f, a] * int(self.flights.loc[f, 'block_time']) for f in F)
+            rem_fh_total = int(self.flights[self.flights['aircraft_id'] == a]['ac_remaining_fh'].iloc[0] * 0.8 * 60) # 20% safety buffer
+            model.Add(total_block_time <= rem_fh_total)
+
             for f1 in F:
                 for f2 in F:
                     if f1 == f2: continue
-                    if not self._check_time_feasibility(f1, f2):
+                    # Pre-calculate time feasibility including dynamic turnaround
+                    if not self._check_time_feasibility_v15(f1, f2):
                         model.Add(x[f1, a] + x[f2, a] <= 1)
 
-        # (K4/K5) Hierarchical Crew Duty (Scientific v8)
+        # 🧪 v15.0 Excellence: Crew Fatigue & Rest Compliance
         for k in K:
-            # 2026 Standards: 45m briefing + 45m debriefing = 90m per duty
             is_crew_active = model.NewBoolVar(f'is_active_{k}')
             model.AddMaxEquality(is_crew_active, [y[f, k] for f in F])
             
             flight_time = sum(int(self.flights.loc[f, 'block_time']) * y[f, k] for f in F)
-            # Duty = FlightTime + 90m (if active)
-            model.Add(flight_time + (is_crew_active * 90) <= 720) 
-            
-            # Max sectors per day: 4
-            model.Add(sum(y[f, k] for f in F) <= 4)
+            model.Add(flight_time + (is_crew_active * 90) <= 600) # Hard duty limit per EASA/FAA
+            model.Add(sum(y[f, k] for f in F) <= 4) # Max 4 sectors
 
             for f1 in F:
                 for f2 in F:
                     if f1 == f2: continue
-                    if not self._check_time_feasibility(f1, f2, crew_mode=True):
+                    if not self._check_time_feasibility_v15(f1, f2, crew_mode=True):
                         model.Add(y[f1, k] + y[f2, k] <= 1)
 
-        # --- MAINTENANCE (Standard v7 preserved) ---
-        for a in A:
-            total_block_time = []
-            for f in F:
-                total_block_time.append(x[f, a] * int(self.flights.loc[f, 'block_time']))
-            rem_fh_total = self.flights[self.flights['aircraft_id'] == a]['ac_remaining_fh'].iloc[0] * 60
-            model.Add(sum(total_block_time) <= int(rem_fh_total))
-
-        # 4. OBJECTIVE: Maximize Net Profit
+        # 4. OBJECTIVE: Multinomial Optimization (Revenue, Fuel, Carbon, Delay, Connection)
         revenue = []
         op_costs = []
         fuel_costs = []
         delay_penalty = []
         carbon_penalty = []
         fatigue_penalty = []
-        contrail_penalty = []
-        missed_connection_penalty = []
+        connection_priority = []
 
         for f in F:
             active = (1 - z[f])
@@ -113,36 +106,38 @@ class DigitalTwinSolver:
             op_costs.append(active * int(self.flights.loc[f, 'op_cost_tl']))
             
             base_fuel = int(self.flights.loc[f, 'fuel_cost_tl'])
-            fuel_costs.append(active * base_fuel + s[f] * (base_fuel * 2 // 100))
+            # SAF usage (s[f]) increases cost but reduces Carbon
+            fuel_costs.append(active * base_fuel + s[f] * (base_fuel * 3 // 100))
             
+            # Delay penalty scaled by destination importance
             delay_penalty.append(d[f] * int(self.flights.loc[f, 'delay_cost_per_min']))
             
-            # v9 Resilience: Missed Connection Penalty
-            # If delay > 30m, connection risk increases linearly
+            # v15.0 Excellence: Connection Reliability (MCT)
             pax_conn = int(self.flights.loc[f, 'pax_connection_count'])
-            # Simulation: 2000 TL per missed connection
-            # We use a linear approximation for MILP: (d[f] - 30) * pax_conn * 50 if d > 30
-            # For simplicity, we use d[f] * pax_conn * 20 (approximate weight)
-            missed_connection_penalty.append(d[f] * pax_conn * 20)
+            connection_priority.append(d[f] * pax_connection_count * 50) # Heavy penalty for missed connections
 
+            # ESG: Carbon Footprint (SAF reduces emission by up to 80%)
             base_co2 = int(self.flights.loc[f, 'co2_kg'])
-            co2_emitted_scaled = active * base_co2 - s[f] * (base_co2 * 80 // 100)
-            carbon_penalty.append(co2_emitted_scaled * 10) 
+            co2_emitted = active * base_co2 - s[f] * (base_co2 * 8 // 10)
+            carbon_penalty.append(co2_emitted * 20) # 20 TL/kg carbon tax simulation
             
-            # v8 Scientific: Contrail Penalty
-            c_risk = int(self.flights.loc[f, 'contrail_risk'] * 100)
-            contrail_penalty.append(active * (c_risk * contrail_penalty_weight // 100))
-
         for k in K:
             base_f = int(self.flights[self.flights['crew_id'] == k]['crew_base_fatigue'].iloc[0])
-            k_fatigue_terms = [base_f]
+            k_fatigue_total = base_f * 500
             for f in F:
-                multiplier = 13 if self.flights.loc[f, 'is_night_flight'] == 1 else 10
-                block_time = int(self.flights.loc[f, 'block_time'])
-                k_fatigue_terms.append(y[f, k] * (block_time * multiplier // 10))
-            fatigue_penalty.append(sum(k_fatigue_terms) * 500)
+                k_fatigue_total += y[f, k] * (int(self.flights.loc[f, 'block_time']) * 100)
+            fatigue_penalty.append(k_fatigue_total)
 
-        model.Maximize(sum(revenue) - sum(op_costs) - sum(fuel_costs) - sum(delay_penalty) - sum(carbon_penalty) - sum(fatigue_penalty) - sum(contrail_penalty) - sum(missed_connection_penalty))
+        # Final Aviation Excellence Objective
+        model.Maximize(
+            sum(revenue) 
+            - sum(op_costs) 
+            - sum(fuel_costs) 
+            - sum(delay_penalty) 
+            - sum(carbon_penalty) 
+            - sum(fatigue_penalty) 
+            - sum(connection_priority)
+        )
 
         # 5. SOLVE
         solver = cp_model.CpSolver()
@@ -150,7 +145,7 @@ class DigitalTwinSolver:
         status = solver.Solve(model)
 
         if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-            logger.info(f"BİRİNCİLİK SEVİYESİ ÇÖZÜM BULUNDU! Skor: {solver.ObjectiveValue():,} TL")
+            logger.info(f"EXCELLENCE SEVİYESİ ÇÖZÜM BULUNDU! Skor: {solver.ObjectiveValue():,} TL")
             return self._format_results(solver, x, y, z, d, s, A)
         logger.warning("Optimum çözüm bulunamadı, kısıtlar gözden geçiriliyor.")
 
@@ -199,17 +194,24 @@ class DigitalTwinSolver:
             
         return pd.concat(full_results).drop_duplicates('flight_id') if full_results else None
 
-    def _check_time_feasibility(self, f1, f2, crew_mode=False):
+    def _check_time_feasibility_v15(self, f1, f2, crew_mode=False):
+        """
+        🧪 v15.0 Excellence: Turnaround dynamic offset based on hub density and weather risk.
+        """
         t1_arr = self.flights.loc[f1, 'arrival_time']
         t2_dep = self.flights.loc[f2, 'departure_time']
         
         apt = self.flights.loc[f1, 'destination']
-        turn_min = 45
-        if apt == 'IST': turn_min = 45
-        elif apt == 'AYT': turn_min = 40
-        elif apt == 'ESB': turn_min = 35
+        # Professional standard turnarounds
+        base_turn = 45 
+        if apt == 'IST': base_turn = 60 # Mega-hub overhead
+        elif apt in ['LHR', 'JFK']: base_turn = 75 # Intl security overhead
         
-        if crew_mode: turn_min = max(turn_min, 60) # EASA MCT
+        # Risk Multiplier: weather_risk (0 to 0.5) adds extra buffer
+        risk_buffer = int(self.flights.loc[f1, 'weather_risk'] * 60)
+        
+        turn_min = base_turn + risk_buffer
+        if crew_mode: turn_min = max(turn_min, 60) # EASA minimum rest between legs
         
         if t2_dep < t1_arr + pd.Timedelta(minutes=turn_min): return False
         return True

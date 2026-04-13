@@ -46,20 +46,33 @@ class AdvancedAirlineSimulator:
 
     def generate_full_scenario(self, days=1):
         """
-        🚀 v9.0 "Cloud-Native" FlightCleaner: Ensures UTC-standardized, cleaned flight data.
+        🚀 v15.0 "Aviation Excellence" Simulator: 
+        Integrated Weather risks, Technical failure probabilities, and Causal Factors.
         """
         flights = []
-        # Use timezone-aware UTC for all calculations
         from datetime import timezone
         start_date = datetime(2026, 6, 1, 0, 0, tzinfo=timezone.utc)
         
+        # v15.0 Excellence: Define Base Causal Probabilities
+        causal_weights = {
+            'Weather': 0.15,
+            'Security': 0.05,
+            'Technical': 0.10,
+            'Personnel': 0.20,
+            'Cyber': 0.05,
+            'Operational': 0.45
+        }
+        
         for day in range(days):
             current_day = start_date + timedelta(days=day)
-            for i in range(random.randint(80, 120)):
+            num_flights = random.randint(120, 150) # Increased density for stress testing
+            
+            for i in range(num_flights):
                 origin = random.choice(list(self.airports.keys()))
                 destination = random.choice([a for a in self.airports.keys() if a != origin])
                 dist = self.calculate_distance(origin, destination)
                 
+                # Demand-Weight Distribution
                 hour = random.choices(range(24), weights=[1,1,1,2,6,10,12,10,8,6,5,5,6,8,10,12,10,8,6,4,3,2,1,1])[0]
                 departure_time = current_day + timedelta(hours=hour, minutes=random.randint(0, 59))
                 
@@ -70,24 +83,24 @@ class AdvancedAirlineSimulator:
                 ac_type = self.aircraft_pool[ac_id]['type']
                 capacity = self.aircraft_specs[ac_type]['capacity']
                 
-                # Scientific Standard v8/v9: Segmented Demand
-                business_demand = random.randint(10, 60)
-                leisure_demand = random.randint(70, 260)
-                total_demand = business_demand + leisure_demand
-                
-                # Seat allocation
-                business_pax = min(business_demand, int(capacity * 0.2))
-                leisure_pax = min(leisure_demand, capacity - business_pax)
+                # Business/Leisure Segmentation
+                business_pax = min(random.randint(10, 60), int(capacity * 0.2))
+                leisure_pax = min(random.randint(70, 260), capacity - business_pax)
                 passenger_count = business_pax + leisure_pax
                 load_factor = passenger_count / capacity
                 
                 is_night = 1 if (departure_time.hour >= 22 or departure_time.hour <= 6) else 0
                 
-                # v9 Resilience: Passenger Missed Connection Risk
-                # High risk if flight is towards the end of day and destination is a hub
-                pax_connection_count = random.randint(5, 50) if destination == 'IST' else random.randint(0, 15)
+                # O&D / MCT Analysis: Hub Density Impact
+                # IST is a major hub; ESB/ADB are regional. LHR/JFK are international.
+                hub_density = self.airports[destination]['delay_factor']
+                pax_connection_count = random.randint(10, 60) if hub_density > 1.2 else random.randint(0, 20)
                 
-                # Contrail Risk (Scientific)
+                # v15.0 Risks & Attribution
+                weather_risk = random.uniform(0.01, 0.15) * hub_density
+                tech_risk = random.uniform(0.01, 0.05)
+                causal_factor = random.choices(list(causal_weights.keys()), weights=list(causal_weights.values()))[0]
+                
                 contrail_risk = random.uniform(0.1, 0.4)
                 if is_night == 1: contrail_risk += 0.2
                 
@@ -118,16 +131,17 @@ class AdvancedAirlineSimulator:
                     'crew_base_fatigue': self.crew_pool[crew_id]['base_fatigue'],
                     'is_night_flight': is_night,
                     'contrail_risk': contrail_risk,
-                    'delay_risk': random.uniform(0.05, 0.2), 
-                    'revenue_tl': (business_pax * 2500) + (leisure_pax * 800), # Weighted revenue
+                    'weather_risk': weather_risk,
+                    'tech_failure_prob': tech_risk,
+                    'causal_factor': causal_factor,
+                    'revenue_tl': (business_pax * 3500) + (leisure_pax * 1200),
                     'fuel_cost_tl': dist * self.aircraft_specs[ac_type]['fuel'] * (1 + load_factor * 0.2),
                     'co2_kg': dist * self.aircraft_specs[ac_type]['co2'],
                     'op_cost_tl': self.aircraft_specs[ac_type]['op_cost'],
-                    'delay_cost_per_min': 600,
+                    'delay_cost_per_min': 800 if destination in ['IST', 'LHR', 'JFK'] else 500,
                     'saf_usage': 0.0
                 })
         
-        # FlightCleaner: Dropping nulls and ensuring UTC
         df = pd.DataFrame(flights)
         df['departure_time'] = pd.to_datetime(df['departure_time'], utc=True)
         df['arrival_time'] = pd.to_datetime(df['arrival_time'], utc=True)
