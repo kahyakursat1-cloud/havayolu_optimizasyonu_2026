@@ -44,9 +44,10 @@
         }
         .strategic-3d-active .glass:has(#trajectoryChart),
         .strategic-3d-active .glass:has(#causalChart) {
-            background: transparent;
-            border: none;
-            box-shadow: none;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important; /* v17.7 Crystal Clear Fix */
         }
         #main-view header, #main-view section { transition: opacity 0.4s ease, transform 0.4s ease; }
     </style>
@@ -113,7 +114,10 @@
                     <h2 id="sync-status-badge" class="orbitron neon-blue" style="margin:0; font-size:1.8rem;">LOCAL</h2>
                 </div>
             </div>
-            <button onclick="runOptimize()" class="orbitron" style="padding:1.25rem 2.5rem; background:#0ea5e9; color:white; border:none; border-radius:1.25rem; cursor:pointer; font-weight:bold; font-size:0.9rem; box-shadow: 0 5px 20px rgba(14,165,233,0.4); flex-shrink:0;">RE-OPTIMIZE</button>
+            <div style="display:flex; gap: 10px;">
+                <button id="ai-command-btn" onclick="runAIOptimize()" class="orbitron" style="padding:1.25rem 2rem; background:linear-gradient(135deg, #a855f7, #6366f1); color:white; border:none; border-radius:1.25rem; cursor:pointer; font-weight:bold; font-size:0.75rem; box-shadow: 0 5px 15px rgba(168,85,247,0.3); flex-shrink:0;">AI COMMAND</button>
+                <button onclick="runOptimize()" class="orbitron" style="padding:1.25rem 2.5rem; background:#0ea5e9; color:white; border:none; border-radius:1.25rem; cursor:pointer; font-weight:bold; font-size:0.9rem; box-shadow: 0 5px 20px rgba(14,165,233,0.4); flex-shrink:0;">RE-OPTIMIZE</button>
+            </div>
         </header>
 
         <!-- Body: Analyst Analytics Suite -->
@@ -146,6 +150,21 @@
                                 <tr><th style="padding-bottom:8px;">FLIGHT</th><th style="padding-bottom:8px;">LF%</th><th style="padding-bottom:8px;">ESG</th></tr>
                             </thead>
                             <tbody id="fleet-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- v18.0 Oracle Card: Predictive Outlook -->
+                <div class="glass" style="height: 35%; padding: 1.5rem; display: flex; flex-direction: column; overflow: hidden; border-top: 1px solid rgba(14,165,233,0.3);">
+                    <h3 class="orbitron" style="font-size:0.75rem; color:#f43f5e; margin:0 0 1rem 0;">PREDICTIVE OPERATIONAL OUTLOOK (ORACLE)</h3>
+                    <div style="flex: 1; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.6rem; color: #94a3b8;">
+                            <thead style="text-align:left; color:#64748b; border-bottom:1px solid rgba(244,63,94,0.1);">
+                                <tr><th style="padding:4px;">DATE</th><th style="padding:4px;">EST. PLF</th><th style="padding:4px;">RISK</th></tr>
+                            </thead>
+                            <tbody id="forecast-body">
+                                <!-- v18.0 AI Data Stream -->
+                            </tbody>
                         </table>
                     </div>
                 </div>

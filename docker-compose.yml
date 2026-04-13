@@ -1,0 +1,12 @@
+# v18.0 "The Singularity" Docker Compose orchestrator
+services:
+  aviation-core:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./logs:/app/logs
+      - ./src/models:/app/src/models
+    environment:
+      - PRODUCTION=true
+    restart: unless-stopped

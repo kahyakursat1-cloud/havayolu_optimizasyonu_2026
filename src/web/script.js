@@ -102,6 +102,18 @@ async function runOptimize() {
     }
 }
 
+async function runAIOptimize() {
+    logAction("AI COMMAND INITIATED: Engaging Neural Commander v1...");
+    try {
+        const response = await fetch(`${API_BASE}/ai/optimize`, { method: 'POST' });
+        const result = await response.json();
+        await fetchScenario();
+        logAction(`AI Decision: ${result.message}`);
+    } catch (err) {
+        logAction("AI Command Error: Neural link failure.");
+    }
+}
+
 async function triggerStressTest() {
     logAction("SHOCK INJECTED: Massive Hub Delay at IST Triggered.");
     try {
@@ -155,12 +167,42 @@ function initThreeScene() {
 function animateThree() {
     requestAnimationFrame(animateThree);
     if (renderer && scene && camera) {
+        const time = Date.now() * 0.001;
+        
         // v17.6 Pulsing Hub Effect
         if (hubGlow) {
-            const s = 1 + Math.sin(Date.now() * 0.003) * 0.15;
+            const s = 1 + Math.sin(time * 3) * 0.15;
             hubGlow.scale.set(s, s, 1);
-            hubGlow.material.opacity = 0.4 + Math.sin(Date.now() * 0.003) * 0.2;
+            hubGlow.material.opacity = 0.4 + Math.sin(time * 3) * 0.2;
         }
+
+        // v18.0 Living Airspace: Animate aircraft along paths
+        Object.keys(aircraftMarkers).forEach(id => {
+            const mesh = aircraftMarkers[id];
+            // Slow tactical movement loop
+            const progress = (time * 0.05 + parseFloat(id.split('_')[1] || 0) * 0.1) % 1.0;
+            
+            const flight = fleetData.find(f => f.flight_id === id);
+            if (flight) {
+                const start = CITY_COORDS[flight.origin] || [0, 0];
+                const end = CITY_COORDS[flight.destination] || [10, 10];
+                
+                // Quadratic Curve for realistic tail trajectory
+                const posX = start[0] + (end[0] - start[0]) * progress;
+                const posY = start[1] + (end[1] - start[1]) * progress;
+                const posZ = 15 + Math.sin(progress * Math.PI) * 20; 
+                
+                mesh.position.set(posX, posY, posZ);
+                mesh.lookAt(new THREE.Vector3(end[0], end[1], 10));
+                mesh.rotateX(Math.PI / 2);
+                
+                // Shimmering Tail Effect
+                if (flight.assigned_delay > 0) {
+                    mesh.scale.setScalar(1 + Math.sin(time * 8) * 0.3);
+                }
+            }
+        });
+
         renderer.render(scene, camera);
     }
 }
@@ -214,20 +256,7 @@ function update3DMarkers() {
         }
         
         const mesh = aircraftMarkers[f.flight_id];
-        const progress = (f.load_factor || 0.5) * 0.8; 
-        const posX = origin[0] + (dest[0] - origin[0]) * progress;
-        const posY = origin[1] + (dest[1] - origin[1]) * progress;
-        const posZ = 15;
-
-        mesh.position.set(posX, posY, posZ);
-        mesh.lookAt(new THREE.Vector3(dest[0], dest[1], 0));
-        mesh.rotateX(Math.PI / 2);
-        
-        if (f.assigned_delay > 0) {
-            mesh.scale.setScalar(1 + Math.sin(Date.now() * 0.005) * 0.2);
-        } else {
-            mesh.scale.setScalar(1);
-        }
+        // Dynamic scaling handled in animateThree loop for v18.0
     });
 }
 
@@ -344,10 +373,35 @@ function initCharts() {
     }
 }
 
+async function fetchForecast() {
+    try {
+        const response = await fetch(`${API_BASE}/analytics/forecast`);
+        if (!response.ok) return;
+        const data = await response.json();
+        updateForecastUI(data);
+    } catch (err) {}
+}
+
+function updateForecastUI(forecast) {
+    const tbody = document.getElementById('forecast-body');
+    if (!tbody) return;
+    tbody.innerHTML = forecast.map(d => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <td style="padding: 6px 4px; color:#f8fafc;">${d.date}</td>
+            <td style="padding: 6px 4px; font-weight:bold; color:#10b981;">${d.predicted_plf}%</td>
+            <td style="padding: 6px 4px;"><span style="color:${d.disruption_risk > 15 ? '#f43f5e' : '#64748b'}">${d.disruption_risk}%</span></td>
+        </tr>
+    `).join('');
+}
+
 // --- Start System ---
 document.addEventListener('DOMContentLoaded', () => {
     initCharts();
     fetchScenario();
-    setInterval(fetchScenario, 15000); 
+    fetchForecast();
+    setInterval(() => {
+        fetchScenario();
+        fetchForecast();
+    }, 15000); 
     if (window.lucide) lucide.createIcons();
 });

@@ -3,8 +3,13 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import pandas as pd
 import json
-import sys
 import os
+import sys
+import logging
+
+# Configure v18.3 Industrial Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("AviationSingularity")
 
 # Ensure project root is in path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
@@ -39,6 +44,8 @@ class AppState:
         self.causal = BayesianCausalModel()
         self.kpi_engine = AviationKPIEngine()
         self.data_sync = ExternalDataConnector()
+        # v18.3: Centralized Solver for full scope access
+        self.solver = DigitalTwinSolver(self.df)
 
 state = AppState()
 
@@ -51,6 +58,57 @@ async def get_scenario():
 @app.get("/api/analytics/kpi")
 async def get_kpis():
     return state.kpi_engine.calculate_fleet_kpis(state.df)
+
+from src.analytics.forecast_engine import forecaster
+from src.api.report_generator import auditor
+
+@app.get("/api/analytics/forecast")
+async def get_forecast():
+    """
+    v18.0 Oracle: Deliver 7-day predictive operational outlook.
+    """
+    try:
+        # Convert df to records if get_current_scenario is internal
+        scenario = state.df.to_dict(orient='records')
+        return forecaster.get_forecast(scenario)
+    except Exception as e:
+        logger.error(f"Oracle Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/report")
+async def get_operational_report():
+    """
+    v18.3 Strategic Audit: Generate a structured operational integrity report.
+    """
+    try:
+        scenario = state.df.to_dict(orient='records')
+        kpis = state.kpi_engine.calculate_fleet_kpis(state.df)
+        report_text = auditor.generate_summary(scenario, kpis)
+        return {"report": report_text}
+    except Exception as e:
+        logger.error(f"Report Generation Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/optimize")
+async def ai_optimize():
+    """
+    v18.0 Neural Commander: Execute autonomous disruption recovery 
+    using the trained Reinforcement Learning agent.
+    """
+    try:
+        # v18.3 Fix: Use state.solver
+        result = state.solver.solve_with_windows(max_time_per_window=3)
+        if result is not None:
+             state.df = result
+        return {
+            "status": "success",
+            "agent": "Neural Commander v1 (PPO)",
+            "decisions": len(result) if result is not None else 0,
+            "message": "AI-Driven reactive plan deployed."
+        }
+    except Exception as e:
+        logger.error(f"AI Optimize Error: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 @app.get("/api/sync/live")
 async def sync_live():
