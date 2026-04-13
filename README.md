@@ -1,53 +1,43 @@
-# ✈️ TEKNOFEST 2026: Havayolu Operasyonel Dijital İkizi
-## (Grand Master Finale - v10.1)
+# 🚀 Skylogic Dynamics: Aviation Singularity Enterprise
+![Skylogic Dynamics Official Logo](/home/kursat/.gemini/antigravity/brain/e46d9961-0ddd-43e7-a5d9-610aad81a79b/skylogic_dynamics_turkish_official_logo_1776109274031.png)
 
-[![Project Status: 95/100 Winner Candidate](https://img.shields.io/badge/Status-95%2F100%20Champion%20Candidate-gold?style=for-the-badge)](./TEKNOFEST_2026_TTR_FINAL.md)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge)](https://www.python.org/)
+### *TEKNOFEST 2026 - National Technology Initiative*
 
----
+Aviation Singularity is a professional-grade, autonomous airline operations and optimization platform. It combines high-fidelity 3D tactical visualization (Digital Twin) with a hybrid MILP (Mixed-Integer Linear Programming) and Reinforcement Learning (RL) decision engine.
 
-## 🏆 NİHAİ TEKNİK OTORİTE
-> [!IMPORTANT]
-> **[TEKNOFEST 2026 Nihai Teknik Tasarım Raporu (v1.0)](./TEKNOFEST_2026_TTR_FINAL.md)**
-> Bu rapor, projenin matematiksel kısıtlarını (K1-K10), 3.89x hızlanma benchmarklarını ve SHAP açıklanabilirlik ispatlarını içeren **95/100** skor profilli ana dökümandır. Jürinin burayı incelemesi şiddetle tavsiye edilir.
+![Strategic Dashboard View](https://img.shields.io/badge/Version-18.5-blue?style=for-the-badge&logo=air-force)
+![License](https://img.shields.io/badge/Architecture-Neural--Hybrid-purple?style=for-the-badge)
 
----
+## 🌌 Key Capabilities (v18.5 Singularity)
 
-## 🏗️ Sistem Mimarisi (5-Layer)
-Sistemimiz endüstri standartlarında 5 katmanlı modüler bir "Dijital İkiz" yapısıdır:
-1. **Decision Layer:** Streamlit Dashboard v2.0 (Gerçek zamanlı KPI & Gantt)
-2. **Simulation Layer:** SimPy-driven What-if kriz senaryo motoru
-3. **Optimization Layer:** Hybrid Decision Engine (OR-Tools MILP + Route-Preserving GA)
-4. **Prediction Layer:** XGBoost -41% Hata Paylı Gecikme Tahmini + SHAP Analizi
-5. **Data Layer:** Eurocontrol CODA 2023 bazlı 50,000 sentetik operasyonel kayıt
+- **🧠 Neural Commander:** Reinforcement Learning (PPO) agent trained on 25,000+ tactical segments for autonomous disruption management.
+- **🔮 Predictive Oracle:** AI-driven 7-day operational outlook for passenger load factor (PLF) and disruption risk.
+- **✈️ Cinematic 3D Sim:** Real-time flight trajectory animation with shimmering neon tail-trails and tactical depth perception.
+- **🛡️ Resilience Engine:** Multi-objective MILP solver with reactive recovery for hub-level disruptions.
+- **🐳 Industrial Shield:** Fully containerized architecture using Docker & Docker Compose for rapid global deployment.
 
----
+## 🛠️ Technology Stack
 
-## 🛡️ Teknik Zırh: K1-K10 Kısıtları
-Sistemimiz, jürinin beklediği tüm operasyonel kısıtları matematiksel (LaTeX) olarak garanti eder:
-- ✅ **Uçuş Kısıtları:** Menzil Uygunluğu, Slot Uyum Penceresi (±15 dk), Turnaround Time (TAT).
-- ✅ **Mürettebat Kısıtları:** 13 saatlik (780 dk) EASA FDP sınırı, Sertifikasyon eşleşmesi.
-- ✅ **Havalimanı Kısıtları:** Minimum Connection Time (MCT - Havalimanı spesifik).
-- ✅ **Ticari Kısıtlar:** Uçak Kapasitesi vs. Yolcu Talebi.
+- **Backend:** FastAPI (Python 3.12), OR-Tools (MILP), Stable-Baselines3 (PPO RL).
+- **Frontend:** HTML5/CSS3 (Glassmorphism), Three.js (3D Strategic Map), Chart.js (Operational KPIs).
+- **Quality Assurance:** PyTest (Automated QA Suite), GitHub Actions (CI/CD).
+- **Industrial:** Docker, Docker Compose.
 
----
+## 🚀 Rapid Deployment
 
-## 📊 Bilimsel Kanıt (Benchmark)
-| Metrik | Hybrid GA Engine | Baseline (MILP) | Kazanım |
-| :--- | :--- | :--- | :--- |
-| **Solving Speed** | **31.93 sn** | Timeout (>300s) | **~10x Ölçeklenebilirlik** |
-| **AI Prediction** | **7.3 dk MAE** | 12.4 dk MAE | **41% Hassasiyet Artışı** |
-| **GA Convergence**| **89 Nesil** | 347 Nesil | **3.89x Hızlanma** |
+Ensure you have **Docker** installed. Then run:
+
+```bash
+docker-compose up --build
+```
+
+The Operational Dashboard will be available at: `http://localhost:8501`
+
+## 📊 Operational Integrity Audit
+
+The system includes an automated audit generator. You can retrieve the latest strategic performance summary (ASK, RPK, PLF) at:
+`GET /api/report`
 
 ---
-
-## 📚 Dokümantasyon Rehberi
-- 🥇 **[Nihai Teknik Rapor (TTR)](./TEKNOFEST_2026_TTR_FINAL.md)** - (DERECE ADAYI)
-- 📜 [Ürün Yetenek Raporu](./docs/FINAL_CAPABILITIES_REPORT.md) - (Datasheet)
-- 📽️ [Sunum Slaytları (Winning Pitch)](./docs/presentation_slides.md)
-- 🗺️ [Proje Yol Haritası](./PROJECT.md)
-- 🎯 [Ekip Yetkinlik Matrisi](./SKILLS.md)
-
----
-**TEKNOFEST 2026 | Havayolu Optimizasyonu Yarışması | 🥇 Finalist Candidate**
+**Developed for the TEKNOFEST 2026 Competition.**
+*Turning Aviation Operations into a Strategic Science.*
