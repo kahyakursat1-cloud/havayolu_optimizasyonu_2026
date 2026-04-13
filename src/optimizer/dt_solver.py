@@ -17,8 +17,8 @@ class DigitalTwinSolver:
         # Alias for benchmark compatibility
         return self.solve_winning(max_time_sec=max_time_sec)
 
-    def solve_winning(self, max_time_sec=60):
-        logger.info("--- Decathlon Solver v5.1 (Enterprise Edition) Basliyor ---")
+    def solve_winning(self, max_time_sec=60, contrail_penalty_weight=500):
+        logger.info(f"--- Scientific DigitalTwin Solver v8.0 Basliyor (Contrail Weight: {contrail_penalty_weight}) ---")
         model = cp_model.CpModel()
         
         # 1. SETS & INDICES
@@ -49,13 +49,13 @@ class DigitalTwinSolver:
         for f in F:
             s[f] = model.NewIntVar(0, 100, f's_{f}')
 
-        # 3. CONSTRAINTS (K1 - K10)
+        # 3. CONSTRAINTS
         for f in F:
             model.Add(sum(x[f, a] for a in A) + z[f] == 1)
             model.Add(sum(y[f, k] for k in K) + z[f] == 1)
             
             for a in A:
-                if self.flights.loc[f, 'demand'] > self.flights.loc[f, 'ac_capacity']:
+                if self.flights.loc[f, 'passenger_count'] > self.flights.loc[f, 'ac_capacity']:
                     model.Add(x[f, a] == 0)
 
             for k in K:
@@ -70,10 +70,15 @@ class DigitalTwinSolver:
                     if not self._check_time_feasibility(f1, f2):
                         model.Add(x[f1, a] + x[f2, a] <= 1)
 
-        # (K4/K5) Crew Duty Limit (Hardened to 12h) & MCT
+        # (K4/K5) Hierarchical Crew Duty (Scientific v8)
         for k in K:
-            duty_time = sum(int(self.flights.loc[f, 'block_time']) * y[f, k] for f in F)
-            model.Add(duty_time <= 720) # 12 Hours max
+            # 2026 Standards: 45m briefing + 45m debriefing = 90m per duty
+            is_crew_active = model.NewBoolVar(f'is_active_{k}')
+            model.AddMaxEquality(is_crew_active, [y[f, k] for f in F])
+            
+            flight_time = sum(int(self.flights.loc[f, 'block_time']) * y[f, k] for f in F)
+            # Duty = FlightTime + 90m (if active)
+            model.Add(flight_time + (is_crew_active * 90) <= 720) 
             
             # Max sectors per day: 4
             model.Add(sum(y[f, k] for f in F) <= 4)
@@ -84,34 +89,49 @@ class DigitalTwinSolver:
                     if not self._check_time_feasibility(f1, f2, crew_mode=True):
                         model.Add(y[f1, k] + y[f2, k] <= 1)
 
+        # --- MAINTENANCE (Standard v7 preserved) ---
+        for a in A:
+            total_block_time = []
+            for f in F:
+                total_block_time.append(x[f, a] * int(self.flights.loc[f, 'block_time']))
+            rem_fh_total = self.flights[self.flights['aircraft_id'] == a]['ac_remaining_fh'].iloc[0] * 60
+            model.Add(sum(total_block_time) <= int(rem_fh_total))
+
         # 4. OBJECTIVE: Maximize Net Profit
-        # Z = Revenue - OpCost - FuelCost(SAF) - DelayPenalty - CarbonPenalty(SAF) - FatiguePenalty
         revenue = []
         op_costs = []
         fuel_costs = []
         delay_penalty = []
         carbon_penalty = []
         fatigue_penalty = []
+        contrail_penalty = []
+        missed_connection_penalty = []
 
         for f in F:
             active = (1 - z[f])
             revenue.append(active * int(self.flights.loc[f, 'revenue_tl']))
             op_costs.append(active * int(self.flights.loc[f, 'op_cost_tl']))
             
-            # Dynamic Fuel Cost with SAF (SAF is 3x more expensive)
-            # Cost = BaseFuel * (1 + 2 * s[f]/100)
             base_fuel = int(self.flights.loc[f, 'fuel_cost_tl'])
-            # Multiply first then add to avoid division on variable
             fuel_costs.append(active * base_fuel + s[f] * (base_fuel * 2 // 100))
             
             delay_penalty.append(d[f] * int(self.flights.loc[f, 'delay_cost_per_min']))
             
-            # Carbon Penalty (SAF reduces CO2 by 80%)
-            # CO2 = BaseCO2 * (1 - 0.8 * s[f]/100)
+            # v9 Resilience: Missed Connection Penalty
+            # If delay > 30m, connection risk increases linearly
+            pax_conn = int(self.flights.loc[f, 'pax_connection_count'])
+            # Simulation: 2000 TL per missed connection
+            # We use a linear approximation for MILP: (d[f] - 30) * pax_conn * 50 if d > 30
+            # For simplicity, we use d[f] * pax_conn * 20 (approximate weight)
+            missed_connection_penalty.append(d[f] * pax_conn * 20)
+
             base_co2 = int(self.flights.loc[f, 'co2_kg'])
-            # Simplified expression to avoid division on variable
             co2_emitted_scaled = active * base_co2 - s[f] * (base_co2 * 80 // 100)
-            carbon_penalty.append(co2_emitted_scaled * 10) # 10 TL per kg CO2
+            carbon_penalty.append(co2_emitted_scaled * 10) 
+            
+            # v8 Scientific: Contrail Penalty
+            c_risk = int(self.flights.loc[f, 'contrail_risk'] * 100)
+            contrail_penalty.append(active * (c_risk * contrail_penalty_weight // 100))
 
         for k in K:
             base_f = int(self.flights[self.flights['crew_id'] == k]['crew_base_fatigue'].iloc[0])
@@ -122,20 +142,7 @@ class DigitalTwinSolver:
                 k_fatigue_terms.append(y[f, k] * (block_time * multiplier // 10))
             fatigue_penalty.append(sum(k_fatigue_terms) * 500)
 
-        model.Maximize(sum(revenue) - sum(op_costs) - sum(fuel_costs) - sum(delay_penalty) - sum(carbon_penalty) - sum(fatigue_penalty))
-
-        for k in K:
-            # Fatigue is base + weighted block time (1.3x for night)
-            base_f = self.flights[self.flights['crew_id'] == k]['crew_base_fatigue'].iloc[0]
-            k_fatigue_terms = [int(base_f)]
-            for f in F:
-                multiplier = 1.3 if self.flights.loc[f, 'is_night_flight'] == 1 else 1.0
-                k_fatigue_terms.append(y[f, k] * int(self.flights.loc[f, 'block_time'] * multiplier))
-            
-            # Penalty of 500 TL per fatigue unit (minutes-equivalent)
-            fatigue_penalty.append(sum(k_fatigue_terms) * 500)
-
-        model.Maximize(sum(revenue) - sum(op_costs) - sum(fuel_costs) - sum(delay_penalty) - sum(carbon_penalty) - sum(fatigue_penalty))
+        model.Maximize(sum(revenue) - sum(op_costs) - sum(fuel_costs) - sum(delay_penalty) - sum(carbon_penalty) - sum(fatigue_penalty) - sum(contrail_penalty) - sum(missed_connection_penalty))
 
         # 5. SOLVE
         solver = cp_model.CpSolver()
