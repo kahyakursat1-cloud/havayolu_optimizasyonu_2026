@@ -40,7 +40,13 @@ state = AppState()
 
 @app.get("/api/scenario")
 async def get_scenario():
-    return state.df.to_dict(orient='records')
+    # Fix: Pandas Timestamps must be converted to ISO format for JSON compatibility
+    data_json = state.df.to_json(orient='records', date_format='iso')
+    return json.loads(data_json)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    return {"status": "error", "message": str(exc), "type": type(exc).__name__}
 
 @app.post("/api/optimize")
 async def optimize(window_size: int = 6):

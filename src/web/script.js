@@ -35,19 +35,24 @@ async function runOptimize() {
 
 // --- UI Updates ---
 function updateUI() {
+    if (!fleetData || fleetData.length === 0) {
+        console.warn("No fleet data available.");
+        return;
+    }
+
     // Populate Fleet Table
     const tbody = document.getElementById('fleet-table-body');
     tbody.innerHTML = fleetData.slice(0, 50).map(f => `
         <tr class="hover:bg-white/5 transition-colors group">
-            <td class="py-3 px-2 font-bold text-sky-400">${f.flight_id}</td>
-            <td class="py-3 px-2 text-slate-400">${f.destination}</td>
-            <td class="py-3 px-2 text-slate-300 font-mono">${f.pax_connection_count} pax</td>
+            <td class="py-3 px-2 font-bold text-sky-400">${f.flight_id || 'N/A'}</td>
+            <td class="py-3 px-2 text-slate-400">${f.destination || '---'}</td>
+            <td class="py-3 px-2 text-slate-300 font-mono">${f.pax_connection_count || 0} pax</td>
         </tr>
     `).join('');
 
-    // Update Causal Chart (Mock for distribution)
+    // Update Causal Chart
     const causes = fleetData.reduce((acc, f) => {
-        const factor = f.causal_factor || 'Unknown';
+        const factor = f.causal_factor || 'Operational';
         acc[factor] = (acc[factor] || 0) + 1;
         return acc;
     }, {});

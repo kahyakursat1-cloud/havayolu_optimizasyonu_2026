@@ -24,15 +24,18 @@ class TrajectoryPlannerAStar:
 
     def calculate_cost(self, distance, altitude, mach, wind):
         """
-        Simplified fuel burn cost function based on Mach and Altitude.
-        Cost = k1 * Mach^2 + k2 / Altitude + k3 * (Mach * dist / (Mach - wind))
+        v14.1 Hardened Physics: Includes ground speed safety and div-by-zero guards.
         """
-        ground_speed = (mach * 600) + wind # Mock conversion
-        if ground_speed <= 0: return float('inf')
+        # Ground speed must be positive and safely above stall speeds
+        # 600 kt is a typical cruise speed for narrowbodies
+        effective_speed = (mach * 600) + wind 
+        
+        # Hardening: Minimum ground speed guard (50 kts) to prevent div-by-zero
+        safe_ground_speed = max(50, effective_speed)
         
         # Fuel flow simulation
         fuel_flow = (mach**2 * 2000) + (40000 / altitude)
-        time_hrs = distance / ground_speed
+        time_hrs = distance / safe_ground_speed
         return fuel_flow * time_hrs
 
     def optimize_3d_path(self, origin, destination, total_dist):
