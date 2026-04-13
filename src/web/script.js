@@ -20,16 +20,23 @@ async function fetchScenario() {
 
 async function runOptimize() {
     const btn = document.querySelector('button[onclick="runOptimize()"]');
-    btn.innerHTML = `<span class="animate-pulse">OPTIMIZING...</span>`;
+    const overlay = document.getElementById('loading-overlay');
+    
+    // v14.2: Show overlay during heavy processing
+    overlay.classList.remove('hidden');
+    btn.innerHTML = `<span class="animate-pulse tracking-widest">OPTIMIZING...</span>`;
     
     try {
-        await fetch(`${API_BASE}/optimize`, { method: 'POST' });
+        const response = await fetch(`${API_BASE}/optimize`, { method: 'POST' });
+        if (!response.ok) throw new Error("Optimization Timeout");
         await fetchScenario();
-        logAgentAction("Fleet-wide windowed optimization complete.");
+        logAgentAction("Fleet-wide windowed optimization complete. New schedule z-signed.");
     } catch (err) {
         console.error("Optimize Failed:", err);
+        logAgentAction("Warning: Optimization engine timeout. Using ACR recovery.");
     } finally {
         btn.innerText = "RE-OPTIMIZE";
+        overlay.classList.add('hidden');
     }
 }
 
@@ -69,6 +76,8 @@ function logAgentAction(msg) {
 // --- Charts Initialization ---
 function initCharts() {
     const ctxTraj = document.getElementById('trajectoryChart').getContext('2d');
+    if (trajectoryChart) trajectoryChart.destroy();
+    
     trajectoryChart = new Chart(ctxTraj, {
         type: 'line',
         data: {
@@ -81,7 +90,6 @@ function initCharts() {
                 backgroundColor: 'rgba(56, 189, 248, 0.05)',
                 fill: true,
                 pointRadius: 4,
-                pointBackgroundColor: '#38bdf8',
                 tension: 0.3
             }]
         },
@@ -90,29 +98,23 @@ function initCharts() {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: { 
-                y: { 
-                    suggestedMin: 0, suggestedMax: 450,
-                    grid: { color: 'rgba(255,255,255,0.03)' },
-                    ticks: { color: '#64748b', font: { size: 10 } }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#64748b', font: { size: 9 } }
-                }
+                y: { min: 0, max: 450, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#64748b' } },
+                x: { grid: { display: false }, ticks: { color: '#64748b' } }
             }
         }
     });
 
     const ctxCausal = document.getElementById('causalChart').getContext('2d');
+    if (causalChart) causalChart.destroy();
+    
     causalChart = new Chart(ctxCausal, {
         type: 'doughnut',
         data: {
             labels: ['Weather', 'Cyber', 'Security', 'Tech', 'Operational'],
             datasets: [{
                 data: [25, 15, 10, 20, 30],
-                backgroundColor: ['#38bdf8', '#f43f5e', '#a855f7', '#fbbf24', '#0ea5e9'],
-                borderWidth: 0,
-                hoverOffset: 10
+                backgroundColor: ['#0ea5e9', '#f43f5e', '#a855f7', '#fbbf24', '#38bdf8'],
+                borderWidth: 0
             }]
         },
         options: {
@@ -131,7 +133,7 @@ function updateCausalChart(labels, values) {
 }
 
 // --- Start System ---
-window.onload = () => {
+document.addEventListener('DOMContentLoaded', () => {
     initCharts();
     fetchScenario();
     setInterval(fetchScenario, 5000); // Polling every 5s

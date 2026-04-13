@@ -83,9 +83,14 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 h-full overflow-hidden flex flex-col p-8 gap-8">
+    <main class="flex-1 h-full overflow-hidden flex flex-col p-8 gap-8 relative">
         
+        <!-- v14.2 Processing Overlay -->
+        <div id="loading-overlay" class="hidden absolute inset-0 z-50 glass flex flex-col items-center justify-center gap-4 transition-all duration-300">
+            <div class="w-16 h-16 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+            <p class="orbitron text-sky-400 animate-pulse tracking-widest text-sm">SINGULARITY ENGINE OPTIMIZING...</p>
+        </div>
+
         <!-- Header KPI -->
         <header class="flex justify-between items-center">
             <div class="grid grid-cols-4 gap-8 w-full max-w-5xl">
