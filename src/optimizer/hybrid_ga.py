@@ -24,6 +24,20 @@ class HybridGA:
         self.lambda_stability = 50 
         self.stats = []
 
+    def quantum_tunneling_mutation(self, individual):
+        """
+        ⚛️ v11.0 Quantum-Inspired: Simulates quantum tunneling through 
+        high-energy (penalty) barriers to reach distant global optima.
+        """
+        child = individual.copy()
+        # Randomly pick 10% of flights and give them totally new assignments
+        # ignoring local constraints (tunneling through the penalty barrier)
+        tunnel_indices = random.sample(child.index.tolist(), max(1, len(child)//10))
+        ac_list = self.flights['aircraft_id'].unique()
+        for idx in tunnel_indices:
+            child.at[idx, 'assigned_ac'] = random.choice(ac_list)
+        return child
+
     def reversal_mutation(self, individual):
         """GARSRev: Reverses a sub-sequence of flights for a random aircraft."""
         child = individual.copy()
@@ -33,14 +47,9 @@ class HybridGA:
         ac_flights = child[child['assigned_ac'] == target_ac].index.tolist()
         if len(ac_flights) < 3: return child
         
-        # Select sub-sequence
         idx1, idx2 = sorted(random.sample(range(len(ac_flights)), 2))
         sub_seq = ac_flights[idx1:idx2+1]
         
-        # Reverse assigned flights (only for this AC context if applicable)
-        # In this specific GA, we just swap assignments between these flights and others?
-        # Actually, for GARSRev, we can just shuffle or reverse the order if the GA was sequence-based.
-        # Here, we will just swap assignments with another random AC for that sub-sequence
         other_ac = random.choice([a for a in ac_list if a != target_ac])
         child.loc[sub_seq, 'assigned_ac'] = other_ac
         return child
@@ -140,13 +149,15 @@ class HybridGA:
                 # Crossover
                 child.loc[child['assigned_ac'] == ac_to_swap] = p2[p2['assigned_ac'] == ac_to_swap]
                 
-                # Scientific v8: GARSRev Operators
+                # Scientific v11: Quantum-Inspired & GARSRev Operators
                 r = random.random()
                 if r < 0.1: # Standard Mutation
                     f_idx = random.choice(child.index)
                     child.at[f_idx, 'assigned_ac'] = random.choice(ac_list)
                 elif r < 0.2: # GARSRev Reversal
                     child = self.reversal_mutation(child)
+                elif r < 0.25: # ⚛️ Quantum Tunneling (Radical Jump)
+                    child = self.quantum_tunneling_mutation(child)
                 
                 new_pop.append(child)
                 
