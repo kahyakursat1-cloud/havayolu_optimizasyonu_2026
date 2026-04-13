@@ -9,21 +9,23 @@ let causalChart;
 let viewMode = '2D'; // '2D' or '3D'
 
 // Three.js Globals
-let scene, camera, renderer, globe;
-let aircraftMarkers = {}; // {flight_id: mesh}
+let scene, camera, renderer, controls;
+let aircraftMarkers = {}; // {flight_id: {mesh: Mesh, tag: Sprite}}
 let pathLines = {}; // {flight_id: line}
-let hubGlow; // v17.6 IST Hub Glow
 
+// v20.0 Geographic-to-Tactical Mapping (Origin: IST)
+const SCALE_LAT = 15;
+const SCALE_LON = 15;
 const CITY_COORDS = {
-    'IST': [0, 0],
-    'ADB': [-30, -20],
-    'AYT': [20, -30],
-    'ESB': [40, 5],
-    'LHR': [-120, 80],
-    'CDG': [-100, 60],
-    'FRA': [-80, 70],
-    'JFK': [-300, 40],
-    'DXB': [120, -40]
+    'IST': [0, 0], // Center
+    'ADB': [(27.15 - 28.74) * SCALE_LON, (38.42 - 41.27) * SCALE_LAT],
+    'AYT': [(30.71 - 28.74) * SCALE_LON, (36.88 - 41.27) * SCALE_LAT],
+    'ESB': [(32.86 - 28.74) * SCALE_LON, (39.93 - 41.27) * SCALE_LAT],
+    'LHR': [(-0.45 - 28.74) * SCALE_LON, (51.47 - 41.27) * SCALE_LAT],
+    'CDG': [(2.55 - 28.74) * SCALE_LON, (49.0 - 41.27) * SCALE_LAT],
+    'FRA': [(8.57 - 28.74) * SCALE_LON, (50.0 - 41.27) * SCALE_LAT],
+    'JFK': [(-73.77 - 28.74) * SCALE_LON, (40.64 - 41.27) * SCALE_LAT],
+    'DXB': [(55.36 - 28.74) * SCALE_LON, (25.25 - 41.27) * SCALE_LAT]
 };
 
 // --- API Calls ---
@@ -51,16 +53,66 @@ async function fetchKPIs() {
 }
 
 async function syncLive() {
-    logAction("Syncing with OpenSky & METAR nodes...");
+    logAction("Syncing with OpenSky & Live Radar nodes...");
+    const badge = document.getElementById('sync-status-badge');
+    if (badge) badge.innerText = "SYNCING...";
+    
     try {
-        const response = await fetch(`${API_BASE}/sync/live`);
-        const result = await response.json();
-        document.getElementById('sync-status-badge').innerText = "LIVE SYNCED";
-        logAction(`Live Traffic Detected: ${result.traffic.active_icao_count} AC in TR-Airspace.`);
-        logAction(`IST Weather: ${result.weather.metar}`);
+        const response = await fetch(`${API_BASE}/sync/live-traffic`);
+        const data = await response.json();
+        
+        if (data.active_flights) {
+            logAction(`Live Radar: ${data.count} aircraft tracked over IST hub.`);
+            if (badge) badge.innerText = "LIVE SYNCED";
+            updateLive3DMarkers(data.active_flights);
+        }
     } catch (err) {
-        logAction("Live Sync Error: API Link Timeout.");
+        logAction("Sync Error: ADS-B node unreachable.");
+        if (badge) badge.innerText = "OFFLINE";
     }
+}
+
+// v21.3: Real-Time ADS-B Marker Engine
+function updateLive3DMarkers(liveFlights) {
+    if (!scene) return;
+
+    // Clean up existing live markers prefixed with 'LIVE_'
+    Object.keys(aircraftMarkers).forEach(id => {
+        if (id.startsWith('LIVE_')) {
+            const marker = aircraftMarkers[id];
+            if (marker.mesh) scene.remove(marker.mesh);
+            if (marker.tag) scene.remove(marker.tag);
+            delete aircraftMarkers[id];
+        }
+    });
+
+    liveFlights.forEach(f => {
+        const id = `LIVE_${f.flight_id}`;
+        
+        // Convert real Lat/Lon to Tactical Plane Coords (IST origin)
+        const posX = (f.lon - 28.74) * SCALE_LON;
+        const posY = (f.lat - 41.27) * SCALE_LAT;
+        const posZ = 12 + (f.alt / 1500); 
+
+        const geometry = new THREE.ConeGeometry(5, 12, 4);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: 0x22c55e, // Emerald Green for LIVE traffic
+            emissive: 0x14532d,
+            emissiveIntensity: 0.5
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(posX, posY, posZ);
+        mesh.rotateX(Math.PI / 2);
+        
+        // Align heading (OpenSky headings are degrees)
+        mesh.rotation.z = - (f.heading * Math.PI / 180);
+        
+        scene.add(mesh);
+        const tag = createAircraftTag(f.flight_id);
+        tag.position.set(posX, posY + 12, posZ + 8);
+        
+        aircraftMarkers[id] = { mesh, tag };
+    });
 }
 
 async function runOptimize() {
@@ -141,27 +193,93 @@ function initThreeScene() {
     renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
 
-    // v17.6 Hub Glow (IST Center)
-    const glowGeo = new THREE.TorusGeometry(10, 0.6, 16, 100);
-    const glowMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.8 });
-    hubGlow = new THREE.Mesh(glowGeo, glowMat);
-    hubGlow.position.z = 2;
-    scene.add(hubGlow);
+    // v20.0: Tactical Interactive Controls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = true;
+    controls.minDistance = 50;
+    controls.maxDistance = 1500;
+    
+    // v20.0: Tactical World Map Plane with v21.1 Load Guard
+    const loader = new THREE.TextureLoader();
+    loader.load('assets/map_texture.png', 
+        (texture) => {
+            console.log("✅ Tactical Map Texture Loaded Successfully.");
+            const mapGeo = new THREE.PlaneGeometry(3000, 3000);
+            const mapMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.8 });
+            const mapPlane = new THREE.Mesh(mapGeo, mapMat);
+            mapPlane.position.z = 0;
+            scene.add(mapPlane);
+        },
+        undefined,
+        (err) => {
+            console.error("❌ Map Texture Load Failed:", err);
+            // Fallback grid for visibility
+            const fallbackGrid = new THREE.GridHelper(3000, 60, 0x1e293b, 0x0f172a);
+            fallbackGrid.rotation.x = Math.PI / 2;
+            scene.add(fallbackGrid);
+        }
+    );
 
-    const grid = new THREE.GridHelper(600, 40, 0x334155, 0x1e293b);
-    grid.rotation.x = Math.PI / 2;
-    grid.position.z = -1;
-    scene.add(grid);
+    // v19.0: Strategic City Hubs & Labels
+    Object.keys(CITY_COORDS).forEach(city => {
+        const coords = CITY_COORDS[city];
+        createCityLabel(city, coords[0], coords[1]);
+        
+        // Visual Anchor for Hubs
+        const hubGeo = new THREE.RingGeometry(4, 6, 32);
+        const hubMat = new THREE.MeshBasicMaterial({ color: city === 'IST' ? 0xa855f7 : 0x0ea5e9, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+        const ring = new THREE.Mesh(hubGeo, hubMat);
+        ring.position.set(coords[0], coords[1], 1);
+        scene.add(ring);
+    });
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const light = new THREE.PointLight(0x0ea5e9, 2.5, 800);
-    light.position.set(0, 0, 150);
+    const light = new THREE.PointLight(0x0ea5e9, 2.5, 1000);
+    light.position.set(0, 0, 250);
     scene.add(light);
 
-    camera.position.set(0, -130, 200);
-    camera.lookAt(0, 0, 0);
+    camera.position.set(0, 0, 800); 
+    controls.update();
 
     animateThree();
+}
+
+// v19.0 City Label Sprite Helper
+function createCityLabel(text, x, y) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = 128; // Smaller for better performance
+	canvas.height = 64;
+    context.font = "Bold 24px 'Orbitron', sans-serif";
+    context.textAlign = "center";
+    context.fillStyle = text === 'IST' ? "#a855f7" : "#38bdf8";
+    context.fillText(text, 64, 40);
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(40, 20, 1);
+    sprite.position.set(x, y + 10, 5);
+    scene.add(sprite);
+}
+
+// v20.0 Aircraft Tag Sprite Helper
+function createAircraftTag(flight_id) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = 128;
+    canvas.height = 64;
+    context.font = "18px 'Orbitron', sans-serif";
+    context.textAlign = "center";
+    context.fillStyle = "#ffffff";
+    context.fillText(flight_id, 64, 40);
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(30, 15, 1);
+    scene.add(sprite);
+    return sprite;
 }
 
 function animateThree() {
@@ -176,9 +294,15 @@ function animateThree() {
             hubGlow.material.opacity = 0.4 + Math.sin(time * 3) * 0.2;
         }
 
+        // v20.0: Update Controls
+        if (controls) controls.update();
+
         // v18.0 Living Airspace: Animate aircraft along paths
         Object.keys(aircraftMarkers).forEach(id => {
-            const mesh = aircraftMarkers[id];
+            const marker = aircraftMarkers[id];
+            const mesh = marker.mesh;
+            const tag = marker.tag;
+
             // Slow tactical movement loop
             const progress = (time * 0.05 + parseFloat(id.split('_')[1] || 0) * 0.1) % 1.0;
             
@@ -187,18 +311,23 @@ function animateThree() {
                 const start = CITY_COORDS[flight.origin] || [0, 0];
                 const end = CITY_COORDS[flight.destination] || [10, 10];
                 
-                // Quadratic Curve for realistic tail trajectory
+                // Linear move on Tactical Map Plane
                 const posX = start[0] + (end[0] - start[0]) * progress;
                 const posY = start[1] + (end[1] - start[1]) * progress;
-                const posZ = 15 + Math.sin(progress * Math.PI) * 20; 
+                const posZ = 5; 
                 
                 mesh.position.set(posX, posY, posZ);
-                mesh.lookAt(new THREE.Vector3(end[0], end[1], 10));
+                mesh.lookAt(new THREE.Vector3(end[0], end[1], posZ));
                 mesh.rotateX(Math.PI / 2);
                 
-                // Shimmering Tail Effect
+                // v20.0: Tag Following
+                if (tag) {
+                    tag.position.set(posX, posY + 8, posZ + 5);
+                }
+
+                // Shimmering Delay Effect
                 if (flight.assigned_delay > 0) {
-                    mesh.scale.setScalar(1 + Math.sin(time * 8) * 0.3);
+                    mesh.scale.setScalar(1.2 + Math.sin(time * 8) * 0.4);
                 }
             }
         });
@@ -239,24 +368,20 @@ function update3DMarkers() {
     if (!scene || !fleetData) return;
     
     fleetData.forEach((f) => {
-        const origin = CITY_COORDS[f.origin] || [0, 0];
-        const dest = CITY_COORDS[f.destination] || [10, 10];
-        drawFlightPath(f.flight_id, f.origin, f.destination);
-
         if (!aircraftMarkers[f.flight_id]) {
-            const geometry = new THREE.ConeGeometry(2, 6, 3);
+            // v20.0 Aircraft Silhouette Mesh
+            const geometry = new THREE.ConeGeometry(3, 8, 32); 
             const material = new THREE.MeshPhongMaterial({ 
-                color: f.assigned_delay > 0 ? 0xf43f5e : 0x0ea5e9,
+                color: f.assigned_delay > 0 ? 0xf43f5e : 0xffd700, // Gold for active, Red for delay
                 emissive: f.assigned_delay > 0 ? 0x991b1b : 0x075985,
                 emissiveIntensity: 0.5
             });
             const mesh = new THREE.Mesh(geometry, material);
             scene.add(mesh);
-            aircraftMarkers[f.flight_id] = mesh;
+            
+            const tag = createAircraftTag(f.flight_id);
+            aircraftMarkers[f.flight_id] = { mesh, tag };
         }
-        
-        const mesh = aircraftMarkers[f.flight_id];
-        // Dynamic scaling handled in animateThree loop for v18.0
     });
 }
 

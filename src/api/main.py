@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import logging
+import httpx
 
 # Configure v18.3 Industrial Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -58,6 +59,46 @@ async def get_scenario():
 @app.get("/api/analytics/kpi")
 async def get_kpis():
     return state.kpi_engine.calculate_fleet_kpis(state.df)
+
+@app.get("/api/sync/live-traffic")
+async def get_live_traffic():
+    """
+    v21.2 Live Skies: Fetch real-time ADS-B flight data for Istanbul (IST) area.
+    """
+    # IST Bounding Box (Lat/Lon)
+    params = {
+        "lamin": 40.7,
+        "lamax": 41.5,
+        "lomin": 28.2,
+        "lomax": 29.8
+    }
+    url = "https://opensky-network.org/api/states/all"
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            # Use a slightly wider timeout for reliability
+            response = await client.get(url, params=params, timeout=12)
+            if response.status_code == 200:
+                data = response.json()
+                states = data.get("states", [])
+                flights = []
+                for s in (states or []):
+                    # OpenSky State Vector Mapping:
+                    # 0:icao24, 1:callsign, 2:origin_country, 5:lon, 6:lat, 7:baro_alt, 8:on_ground, 9:velocity, 10:true_track
+                    flights.append({
+                        "flight_id": s[1].strip() if s[1] else s[0],
+                        "lat": s[6],
+                        "lon": s[5],
+                        "alt": s[7] or 0,
+                        "on_ground": s[8],
+                        "velocity": s[9] or 0,
+                        "heading": s[10] or 0
+                    })
+                return {"active_flights": flights, "count": len(flights), "source": "OpenSky Network"}
+            return {"active_flights": [], "count": 0, "status": "api_busy"}
+        except Exception as e:
+            logger.error(f"OpenSky Connector Failure: {str(e)}")
+            return {"active_flights": [], "count": 0, "error": "Connection timed out"}
 
 from src.analytics.forecast_engine import forecaster
 from src.api.report_generator import auditor
