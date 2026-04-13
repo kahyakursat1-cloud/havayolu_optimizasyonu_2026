@@ -1,0 +1,21 @@
+\usepackage{fontspec}
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{TEKNOFEST 2026 - TF2026-AIR-042}
+\lhead{Havayolu Dijital İkizi v1.4}
+\cfoot{\thepage}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+\usepackage{graphicx}
+\usepackage{float}
+\let\origfigure\figure
+\let\endorigfigure\endfigure
+\renewenvironment{figure}[1][2]
+  {\origfigure[H]}
+  {\endorigfigure}

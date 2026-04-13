@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true, theme: 'neutral'});</script>
+    <style>
+        body { background: white; padding: 50px; }
+        #render { width: 1000px; height: 600px; }
+    </style>
+</head>
+<body>
+    <div id="render" class="mermaid">
+graph TB
+    subgraph L1["Layer 1: Veri Katmanı"]
+        DB[(PostgreSQL)]
+    end
+    subgraph L2["Layer 2: Tahmin Katmanı"]
+        L2A[XGBoost Engine] --> L2B[SHAP Explainer]
+    end
+    subgraph L3["Layer 3: Optimizasyon Katmanı"]
+        L3A[Hibrit GA Motoru] --> L3B[K1-K10 Validator]
+    end
+    L1 --> L2 --> L3
+    </div>
+</body>
+</html>
