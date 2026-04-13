@@ -131,4 +131,7 @@ if system_failure:
 
 # 6. Final Data Ecosystem
 st.subheader("🌐 Singularity Canlı Veri Katmanı")
-st.dataframe(st.session_state.df[['flight_id', 'causal_factor', 'assigned_delay', 'contrail_risk']])
+display_cols = ['flight_id', 'contrail_risk']
+if 'causal_factor' in st.session_state.df.columns: display_cols.append('causal_factor')
+if 'assigned_delay' in st.session_state.df.columns: display_cols.append('assigned_delay')
+st.dataframe(st.session_state.df[display_cols])
