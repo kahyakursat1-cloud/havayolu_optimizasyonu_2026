@@ -15,6 +15,7 @@ from src.optimizer.trajectory_a_star import TrajectoryPlannerAStar
 from src.security.ot_monitor import OTSecurityMonitor
 from src.models.causal_intelligence import BayesianCausalModel
 from src.analytics.kpi_engine import AviationKPIEngine
+from src.data_connectors.live_sync import ExternalDataConnector
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -37,6 +38,7 @@ class AppState:
         self.ot_monitor = OTSecurityMonitor()
         self.causal = BayesianCausalModel()
         self.kpi_engine = AviationKPIEngine()
+        self.data_sync = ExternalDataConnector()
 
 state = AppState()
 
@@ -49,6 +51,13 @@ async def get_scenario():
 @app.get("/api/analytics/kpi")
 async def get_kpis():
     return state.kpi_engine.calculate_fleet_kpis(state.df)
+
+@app.get("/api/sync/live")
+async def sync_live():
+    # 🌐 v17.0 Real-World Data Sync
+    sync_result = state.data_sync.sync_all()
+    # Logic: Injection of live weather risk into the current scenario could go here
+    return sync_result
 
 @app.post("/api/optimize")
 async def optimize(window_size: int = 6):

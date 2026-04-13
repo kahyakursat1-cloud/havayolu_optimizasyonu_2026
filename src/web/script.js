@@ -1,4 +1,4 @@
-// 🚀 Digital Airline Analyst v16.0 Command Logic
+// 🚀 Aviation Singularity v17.0 "Quantum Finale" Command Logic
 
 const API_BASE = "/api";
 
@@ -6,6 +6,11 @@ const API_BASE = "/api";
 let fleetData = [];
 let trajectoryChart;
 let causalChart;
+let viewMode = '2D'; // '2D' or '3D'
+
+// Three.js Globals
+let scene, camera, renderer, globe;
+let aircraftMarkers = {}; // {flight_id: mesh}
 
 // --- API Calls ---
 async function fetchScenario() {
@@ -15,6 +20,7 @@ async function fetchScenario() {
         fleetData = await response.json();
         updateUI();
         fetchKPIs();
+        if (viewMode === '3D') update3DMarkers();
     } catch (err) {
         console.error("Fetch Scenario Failed:", err);
     }
@@ -25,75 +31,124 @@ async function fetchKPIs() {
         const response = await fetch(`${API_BASE}/analytics/kpi`);
         if (!response.ok) return;
         const kpis = await response.json();
-        
-        // Update Side Cards
         document.getElementById('kpi-plf').innerText = `${kpis.plf}%`;
-        document.getElementById('kpi-ask').innerText = (kpis.ask / 1e6).toFixed(1) + "M";
-        document.getElementById('kpi-rpk').innerText = (kpis.rpk / 1e6).toFixed(1) + "M";
         document.getElementById('kpi-cqi').innerText = kpis.cqi;
-        
-        // Update Progress Bars
-        document.getElementById('bar-ask').style.width = "100%";
-        document.getElementById('bar-rpk').style.width = `${kpis.plf}%`;
+    } catch (err) {}
+}
+
+async function syncLive() {
+    logAction("Syncing with OpenSky & METAR nodes...");
+    try {
+        const response = await fetch(`${API_BASE}/sync/live`);
+        const result = await response.json();
+        document.getElementById('sync-status-badge').innerText = "LIVE SYNCED";
+        logAction(`Live Traffic Detected: ${result.traffic.active_icao_count} AC in TR-Airspace.`);
+        logAction(`IST Weather: ${result.weather.metar}`);
     } catch (err) {
-        console.error("KPI Sync Failed");
+        logAction("Live Sync Error: API Link Timeout.");
     }
 }
 
 async function runOptimize() {
-    const btn = document.querySelector('button[onclick="runOptimize()"]');
     const overlay = document.getElementById('loading-overlay');
     if (overlay) overlay.classList.remove('hidden');
-    
     try {
-        const response = await fetch(`${API_BASE}/optimize`, { method: 'POST' });
+        await fetch(`${API_BASE}/optimize`, { method: 'POST' });
         await fetchScenario();
-        logAnalystAction("Global Optimization complete. PLF refined for O&D pairs.");
+        logAction("Quantum Re-Optimization complete. Neural Commander policy updated.");
     } finally {
         if (overlay) overlay.classList.add('hidden');
     }
 }
 
 async function triggerStressTest() {
-    const overlay = document.getElementById('loading-overlay');
-    const badge = document.getElementById('recovery-badge');
-    const overlayText = document.getElementById('overlay-text');
-    
-    if (overlay) {
-        overlayText.innerText = "SHOCK DETECTED. RECOVERY AGENT DEPLOYING...";
-        overlay.classList.remove('hidden');
-    }
-    
+    logAction("SHOCK INJECTED: Massive Hub Delay at IST Triggered.");
     try {
         const response = await fetch(`${API_BASE}/stress-test`, { method: 'POST' });
+        const badge = document.getElementById('recovery-badge');
         if (badge) badge.classList.remove('hidden');
         await fetchScenario();
-        logAnalystAction("CRITICAL: Mass Delay detected at IST hub. Re-routing legs in progress.");
-        
-        // Hide badge after 10s
-        setTimeout(() => badge.classList.add('hidden'), 10000);
-    } finally {
-        if (overlay) overlay.classList.add('hidden');
-    }
+        setTimeout(() => badge.classList.add('hidden'), 8000);
+    } catch (err) {}
 }
 
-// --- UI Updates ---
-function updateUI() {
-    if (!fleetData || fleetData.length === 0) return;
+// --- 3D STRATEGIC VIEW (Three.js) ---
+function initThreeScene() {
+    const container = document.getElementById('three-container');
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
 
-    // 1. Update Fleet Table
+    // Add a simple grid/base representing the airspace
+    const grid = new THREE.GridHelper(200, 20, 0x334155, 0x1e293b);
+    grid.rotation.x = Math.PI / 2;
+    scene.add(grid);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    const pointLight = new THREE.PointLight(0x0ea5e9, 1);
+    pointLight.position.set(50, 50, 50);
+    scene.add(pointLight);
+
+    camera.position.z = 100;
+    camera.position.y = -50;
+    camera.lookAt(0, 0, 0);
+
+    animateThree();
+}
+
+function animateThree() {
+    requestAnimationFrame(animateThree);
+    renderer.render(scene, camera);
+}
+
+function update3DMarkers() {
+    if (!scene) return;
+    
+    fleetData.forEach((f, idx) => {
+        if (!aircraftMarkers[f.flight_id]) {
+            const geometry = new THREE.ConeGeometry(1, 4, 3);
+            const material = new THREE.MeshPhongMaterial({ color: f.assigned_delay > 0 ? 0xf43f5e : 0x0ea5e9 });
+            const mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+            aircraftMarkers[f.flight_id] = mesh;
+        }
+        
+        // Mock positioning aircraft in a row for demo visual
+        const mesh = aircraftMarkers[f.flight_id];
+        const x = (idx % 10) * 15 - 75;
+        const y = Math.floor(idx / 10) * 15 - 75;
+        const z = 10 + (f.assigned_delay ? -5 : 0);
+        mesh.position.set(x, y, z);
+        mesh.rotation.z += 0.02;
+    });
+}
+
+function setViewMode(mode) {
+    viewMode = mode;
+    document.getElementById('toggle-2d').classList.toggle('active', mode === '2D');
+    document.getElementById('toggle-3d').classList.toggle('active', mode === '3D');
+    document.getElementById('three-container').classList.toggle('hidden', mode === '2D');
+    
+    if (mode === '3D' && !scene) initThreeScene();
+    if (mode === '3D') update3DMarkers();
+}
+
+// --- UI Logic ---
+function updateUI() {
     const tbody = document.getElementById('fleet-table-body');
     if (tbody) {
-        tbody.innerHTML = fleetData.slice(0, 10).map(f => `
+        tbody.innerHTML = fleetData.slice(0, 8).map(f => `
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
                 <td style="padding: 10px 5px; font-weight:bold; color:#38bdf8;">${f.flight_id}</td>
                 <td style="padding: 10px 5px; color:#f8fafc;">${(f.load_factor * 100).toFixed(0)}%</td>
-                <td style="padding: 10px 5px;"><span style="color:${f.saf_usage > 0 ? '#a855f7' : '#10b981'}">${f.saf_usage > 0 ? 'SAF+' : 'ECO'}</span></td>
+                <td style="padding: 10px 5px;"><span style="color:${f.assigned_delay > 0 ? '#f43f5e' : '#10b981'}">${f.assigned_delay > 0 ? 'DELAY' : 'OPTIMAL'}</span></td>
             </tr>
         `).join('');
     }
 
-    // 2. Causal Analytics
     const causes = fleetData.reduce((acc, f) => {
         const factor = f.causal_factor || 'Operational';
         acc[factor] = (acc[factor] || 0) + 1;
@@ -107,12 +162,12 @@ function updateUI() {
     }
 }
 
-function logAnalystAction(msg) {
+function logAction(msg) {
     const feed = document.getElementById('agent-logs');
     if (!feed) return;
     const entry = document.createElement('div');
-    entry.style.cssText = "padding:0.6rem; border-radius:0.5rem; background:rgba(56,189,248,0.05); border:1px solid rgba(14,165,233,0.1); font-size:0.65rem; margin-bottom:0.5rem;";
-    entry.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">[ANALIST]</span> ${msg}`;
+    entry.style.cssText = "padding:0.6rem; border-radius:0.5rem; background:rgba(14,165,233,0.05); border:1px solid rgba(14,165,233,0.1); font-size:0.65rem; margin-bottom:0.5rem;";
+    entry.innerHTML = `<span style="color:#0ea5e9; font-weight:bold;">[STAT]</span> ${msg}`;
     feed.prepend(entry);
 }
 
@@ -124,12 +179,12 @@ function initCharts() {
         trajectoryChart = new Chart(ctxTraj, {
             type: 'line',
             data: {
-                labels: ['T-4h', 'T-3h', 'T-2h', 'T-1h', 'NOW', 'T+1h', 'T+2h'],
+                labels: ['T-3', 'T-2', 'T-1', 'NOW', 'T+1', 'T+2'],
                 datasets: [{
-                    label: 'Fleet Delay Spread',
-                    data: [10, 15, 8, 12, 5, 20, 10],
-                    borderColor: '#f43f5e',
-                    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                    label: 'Quantum State Delta',
+                    data: [5, 12, 8, 15, 7, 10],
+                    borderColor: '#0ea5e9',
+                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
                     fill: true,
                     tension: 0.4
                 }]
@@ -152,10 +207,10 @@ function initCharts() {
         causalChart = new Chart(ctxCausal, {
             type: 'doughnut',
             data: {
-                labels: ['Weather', 'Cyber', 'Security', 'Technical', 'Operational'],
+                labels: ['Weather', 'Cyber', 'Technical', 'Operational'],
                 datasets: [{
-                    data: [1, 1, 1, 1, 1],
-                    backgroundColor: ['#0ea5e9', '#f43f5e', '#a855f7', '#fbbf24', '#38bdf8'],
+                    data: [1, 1, 1, 1],
+                    backgroundColor: ['#0ea5e9', '#f43f5e', '#a855f7', '#fbbf24'],
                     borderWidth: 0
                 }]
             },

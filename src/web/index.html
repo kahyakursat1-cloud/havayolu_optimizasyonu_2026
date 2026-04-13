@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
         * { box-sizing: border-box; }
@@ -30,55 +31,59 @@
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes pulse-red { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .pulse-red { animation: pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        
+        #three-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 5; background: #020617; }
+        .view-toggle { cursor: pointer; padding: 4px 12px; border-radius: 6px; font-size: 0.6rem; border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; }
+        .view-toggle.active { background: #0ea5e9; color: white; border-color: #0ea5e9; box-shadow: 0 0 10px rgba(14,165,233,0.4); }
     </style>
 </head>
 <body style="display: flex !important; flex-direction: row !important; height: 100vh; width: 100vw; margin: 0; background: #020617;">
 
-    <!-- Sidebar: Analyst Command Center -->
-    <aside class="glass" style="display: flex !important; flex-direction: column !important; width: 300px !important; height: 100vh !important; flex-shrink: 0 !important; padding: 1.5rem !important; border-radius: 0 !important; border-right: 1px solid rgba(255,255,255,0.05);">
+    <!-- Sidebar: Final Command Center -->
+    <aside class="glass" style="display: flex !important; flex-direction: column !important; width: 300px !important; height: 100vh !important; flex-shrink: 0 !important; padding: 1.5rem !important; border-radius: 0 !important; border-right: 1px solid rgba(255,255,255,0.05); z-index:100;">
         <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:2rem;">
             <div style="width:2.5rem; height:2.5rem; background:#0ea5e9; border-radius:0.5rem; display:flex; align-items:center; justify-content:center; box-shadow: 0 0 15px rgba(14,165,233,0.5);">
-                <i data-lucide="bar-chart-3" style="color:white; width:1.5rem; height:1.5rem;"></i>
+                <i data-lucide="zap" style="color:white; width:1.5rem; height:1.5rem;"></i>
             </div>
-            <h1 class="orbitron neon-blue" style="font-size:1.1rem; font-weight:bold; margin:0; letter-spacing:-1px;">ANALYST OS</h1>
+            <h1 class="orbitron neon-blue" style="font-size:1.1rem; font-weight:bold; margin:0; letter-spacing:-1px;">QUANTUM FINALE</h1>
         </div>
 
         <div style="margin-bottom: 2rem;">
-            <p style="font-size:0.65rem; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:1rem;">COMMERCIAL HEALTH</p>
+            <p style="font-size:0.65rem; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:1rem;">SYSTEM MONITOR</p>
+            <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
+                <div id="toggle-2d" class="view-toggle orbitron active" onclick="setViewMode('2D')">2D VIEW</div>
+                <div id="toggle-3d" class="view-toggle orbitron" onclick="setViewMode('3D')">3D STRATEGIC</div>
+            </div>
+            
             <div style="margin-bottom:1.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 0.75rem;">
-                <p style="font-size: 0.6rem; color: #64748b; margin-bottom: 4px;">PLF (LOAD FACTOR)</p>
-                <p id="kpi-plf" class="orbitron" style="font-size: 1.5rem; color: #38bdf8; margin:0;">0%</p>
-            </div>
-            <div style="margin-bottom:1rem;">
-                <div style="display:flex; justify-content:space-between; font-size:0.6rem; margin-bottom:4px;"><span>ASK (Capacity)</span><span id="kpi-ask">0</span></div>
-                <div class="health-bar-container"><div id="bar-ask" class="health-bar-fill" style="width: 0%; background: #38bdf8;"></div></div>
-            </div>
-            <div style="margin-bottom:1rem;">
-                <div style="display:flex; justify-content:space-between; font-size:0.6rem; margin-bottom:4px;"><span>RPK (Traffic)</span><span id="kpi-rpk">0</span></div>
-                <div class="health-bar-container"><div id="bar-rpk" class="health-bar-fill" style="width: 0%; background: #10b981;"></div></div>
+                <p style="font-size: 0.6rem; color: #64748b; margin-bottom: 4px;">NEURAL LOAD (RL AGENT)</p>
+                <p id="kpi-plf" class="orbitron" style="font-size: 1.5rem; color: #38bdf8; margin:0;">88.4%</p>
             </div>
         </div>
 
         <div style="margin-bottom: 2rem;">
             <p style="font-size:0.65rem; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:1rem;">RESILIENCE CONTROLS</p>
-            <button onclick="triggerStressTest()" class="orbitron" style="width:100%; padding:0.75rem; background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3); color:#f43f5e; border-radius:0.5rem; font-size:0.7rem; cursor:pointer; transition:all 0.2s; font-weight:bold;">TRIGGER STRESS TEST</button>
+            <button onclick="triggerStressTest()" class="orbitron" style="width:100%; padding:0.75rem; background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3); color:#f43f5e; border-radius:0.5rem; font-size:0.7rem; cursor:pointer; transition:all 0.2s; font-weight:bold; margin-bottom:0.5rem;">TRIGGER STRESS TEST</button>
+            <button onclick="syncLive()" class="orbitron" style="width:100%; padding:0.75rem; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:#10b981; border-radius:0.5rem; font-size:0.7rem; cursor:pointer; transition:all 0.2s; font-weight:bold;">LIVE SYNC (API)</button>
         </div>
 
         <div id="agent-logs" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:0.75rem; padding-right:0.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top:1rem;">
-            <div style="padding:0.6rem; border-radius:0.5rem; background:rgba(56,189,248,0.05); border:1px solid rgba(56,189,248,0.1); font-size:0.65rem;">
-                <span class="neon-blue" style="font-weight:bold;">[ANALIST]</span> Ready for 16 July 2026 delivery criteria.
+            <div style="padding:0.6rem; border-radius:0.5rem; background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.1); font-size:0.65rem;">
+                <span class="neon-green" style="font-weight:bold;">[QUANTUM]</span> System Heartbeat Active.
             </div>
         </div>
     </aside>
 
-    <main style="display: flex !important; flex-direction: column !important; flex-grow: 1 !important; height: 100vh !important; padding: 1.5rem !important; gap: 1.5rem !important; min-width: 0;">
+    <main id="main-view" style="display: flex !important; flex-direction: column !important; flex-grow: 1 !important; height: 100vh !important; padding: 1.5rem !important; gap: 1.5rem !important; min-width: 0; position:relative;">
+        <div id="three-container" class="hidden"></div>
+        
         <div id="loading-overlay" class="hidden" style="position:absolute; inset:0; z-index:500; background:rgba(2,6,23,0.95); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.5rem;">
             <div style="width:3.5rem; height:3.5rem; border:4px solid #0ea5e9; border-top-color:transparent; border-radius:50%; animation: spin 0.8s linear infinite;"></div>
-            <p id="overlay-text" class="orbitron neon-blue" style="font-size:0.8rem; letter-spacing:0.5em;">ANALYST ENGINE OPTIMIZING...</p>
+            <p id="overlay-text" class="orbitron neon-blue" style="font-size:0.8rem; letter-spacing:0.5em;">QUANTUM RE-OPTIMIZING...</p>
         </div>
 
         <!-- Header: O&D Quality KPIs -->
-        <header style="display: flex !important; justify-content: space-between !important; align-items: flex-start !important; width: 100% !important;">
+        <header style="display: flex !important; justify-content: space-between !important; align-items: flex-start !important; width: 100% !important; z-index:10;">
             <div style="display: flex !important; flex-grow: 1 !important; gap: 1.5rem !important; margin-right: 2rem !important;">
                 <div class="glass" style="flex:1.5; padding:1.25rem; border-radius:1rem; position:relative; overflow:hidden;">
                     <p style="color:#64748b; font-size:0.65rem; margin:0 0 0.25rem 0; font-weight:bold;">CONNECTION QUALITY (CQI)</p>
@@ -90,15 +95,15 @@
                     <h2 class="orbitron" style="color:#10b981; margin:0; font-size:1.8rem;">100%</h2>
                 </div>
                 <div class="glass" style="flex:1; padding:1.25rem; border-radius:1rem;">
-                    <p style="color:#64748b; font-size:0.65rem; margin:0 0 0.25rem 0; font-weight:bold;">REVENUE POTENTIAL</p>
-                    <h2 class="orbitron neon-blue" style="margin:0; font-size:1.8rem;">∞</h2>
+                    <p style="color:#64748b; font-size:0.65rem; margin:0 0 0.25rem 0; font-weight:bold;">SYNC STATUS</p>
+                    <h2 id="sync-status-badge" class="orbitron neon-blue" style="margin:0; font-size:1.8rem;">LOCAL</h2>
                 </div>
             </div>
             <button onclick="runOptimize()" class="orbitron" style="padding:1.25rem 2.5rem; background:#0ea5e9; color:white; border:none; border-radius:1.25rem; cursor:pointer; font-weight:bold; font-size:0.9rem; box-shadow: 0 5px 20px rgba(14,165,233,0.4); flex-shrink:0;">RE-OPTIMIZE</button>
         </header>
 
         <!-- Body: Analyst Analytics Suite -->
-        <section style="display: flex !important; flex: 1 !important; gap: 1.5rem !important; min-height: 0 !important; width: 100% !important;">
+        <section style="display: flex !important; flex: 1 !important; gap: 1.5rem !important; min-height: 0 !important; width: 100% !important; z-index:10;">
             <div style="display: flex !important; flex-direction: column !important; width: 65% !important; gap: 1.5rem !important; height: 100% !important;">
                 <div class="glass" style="flex: 2 !important; padding: 1.5rem; display: flex; flex-direction: column;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
@@ -108,7 +113,7 @@
                     <div style="flex: 1; min-height: 0;"><canvas id="trajectoryChart"></canvas></div>
                 </div>
                 <div class="glass" style="flex: 1 !important; padding: 1.5rem; display: flex; flex-direction: column;">
-                    <h3 class="orbitron" style="font-size:0.75rem; color:#64748b; margin:0 0 0.75rem 0;">ANALYST OPERATIONAL LOGS</h3>
+                    <h3 class="orbitron" style="font-size:0.75rem; color:#64748b; margin:0 0 0.75rem 0;">QUANTUM OPERATIONAL LOGS</h3>
                     <div id="cyber-feed" style="flex:1; overflow-y:auto; font-size:0.7rem; color:#475569;">
                         <p style="margin:4px 0;">[SYSTEM] Column Generation Heuristic initialized for scale management.</p>
                     </div>
@@ -120,7 +125,7 @@
                     <div style="flex: 1; min-height: 0;"><canvas id="causalChart"></canvas></div>
                 </div>
                 <div class="glass" style="flex: 1; padding: 1.5rem; display: flex; flex-direction: column; overflow: hidden;">
-                    <h3 class="orbitron" style="font-size:0.75rem; color:#64748b; margin:0 0 1.25rem 0;">LIVE O&D SCORECARDS</h3>
+                    <h3 class="orbitron" style="font-size:0.75rem; color:#64748b; margin:0 0 1.25rem 0;">LIVE QUANTUM SCORECARDS</h3>
                     <div style="flex: 1; overflow-y: auto;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem; color: #94a3b8;">
                             <thead style="text-align:left; color:#475569; border-bottom:1px solid rgba(255,255,255,0.05);">
@@ -134,6 +139,6 @@
         </section>
     </main>
 
-    <script src="script.js?v=16.0.1"></script>
+    <script src="script.js?v=17.0.1"></script>
 </body>
 </html>
