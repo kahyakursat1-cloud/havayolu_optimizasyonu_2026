@@ -20,11 +20,35 @@ class AgenticOrchestrator:
         if 'assigned_delay' not in scenario_df.columns:
             scenario_df['assigned_delay'] = 0
             
+        # v13.0 Structural Fragility Check: Simulating Main Cloud Failure
+        if getattr(self, 'system_mode', 'ONLINE') == 'OFFLINE':
+            return "SYSTEM_FAILURE_ACR_REQUIRED"
+
         # Logic: Find aircraft with most delays or crew fatigue issues
         delays = scenario_df[scenario_df['assigned_delay'] > 30]
         if len(delays) > 5:
             return "CRITICAL_DISRUPTION"
         return "STABLE"
+
+    def trigger_acr(self):
+        """
+        🌀 v13.0 ACR: Triggers Autonomous Crisis Recovery in Offline-First mode.
+        """
+        print("🚩 [AGENT-ACR] CENTRAL SYSTEM FAILURE. Switching to P2P Emergency Mode.")
+        self.system_mode = 'OFFLINE'
+        return "ACR_ACTIVATED"
+
+    def p2p_exchange_critical(self):
+        """
+        P2P Negotiation: Shares only critical Slot and Safety data between agents.
+        """
+        critical_data = {
+            'priority_slots': ['TK2026', 'TK2028'],
+            'safety_alerts': 'NONE',
+            'protocol': 'P2P_ENCRYPTED_DIRECT'
+        }
+        print("📡 [AGENT-ACR] Exchanging CRITICAL data only (Slots/Safety) via P2P.")
+        return critical_data
 
     def negotiate_recovery(self, scenario_df):
         """

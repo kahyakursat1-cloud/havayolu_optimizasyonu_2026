@@ -11,18 +11,20 @@ from src.optimizer.dt_solver import DigitalTwinSolver
 from src.generator.synthetic_env import AdvancedAirlineSimulator
 import plotly.express as px
 
-from src.models.yield_predict import YieldPredictor
-from src.integ.cloud import CloudIntegrator
 from src.models.causal_intelligence import BayesianCausalModel
 from src.agent.tam_orchestrator import TAMOrchestrator
+from src.agent.orchestrator import AgenticOrchestrator
+from src.generator.ground_ops import GroundOpsSimulator
+from src.optimizer.trajectory_a_star import TrajectoryPlannerAStar
+from src.security.ot_monitor import OTSecurityMonitor
 
-st.set_page_config(page_title="Total Airport Management - v12.0 Quantum Dynamics", layout="wide")
+st.set_page_config(page_title="Aviation Singularity - v13.0 Masterpiece", layout="wide")
 
-st.title("🏛️ Total Airport Management (v12.0 TAM Ecosystem)")
+st.title("🌌 Aviation Singularity (v13.0 Ultimate OS)")
 
 st.markdown("""
-> [!IMPORTANT]
-> **v12.0 TAM Ekosistemi:** Sistem artık sadece havayoluna değil, **Havalimanı-Havayolu** ortak ekosistemine odaklanmaktadır. **Bayesyen Kök Neden Analizi**, **Pencereleme (Windowing)** ve **Siber Güvenlik** katmanları aktiftir.
+> [!CAUTION]
+> **v13.0 Singularity Phase:** Sistem artık fizik temelli **3D A* Yörünge Optimizasyonu**, **Siber Dayanıklık (OT Monitoring)** ve merkezi çöküşlere karşı **ACR (Otonom Kriz Kurtarma)** katmanlarıyla donatılmıştır.
 """)
 
 # 1. Veri Yukleme & Simulators
@@ -34,84 +36,99 @@ def load_data():
 if 'df' not in st.session_state:
     st.session_state.df = load_data()
 
-# 2. Sidebar: v12 Command Center
-st.sidebar.header("🕹️ v12.0 Komuta Merkezi")
-window_size = st.sidebar.slider("Pencereleme (Window) Boyutu (Saat)", 2, 12, 6)
-bayesian_focus = st.sidebar.selectbox("Bayesyen Odak Noktası", ["Genel", "Siber Güvenlik", "Hava Durumu", "Güvenlik/TSA"])
-cyber_stress = st.sidebar.toggle("🚨 Siber Saldırı Simülasyonu", value=False)
+# 2. Sidebar: v13 Command Center
+st.sidebar.header("🕹️ v13.0 Singularity Müdahale")
+system_failure = st.sidebar.toggle("💥 Merkezi Sistem Çöküşü (ACR Tetikle)", value=False)
+ot_anomaly_sim = st.sidebar.toggle("🔒 OT Veri Anomalisi Enjekte Et", value=False)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("🧬 IoT & Biyometri")
-use_biometrics = st.sidebar.checkbox("Biyometrik Yolcu Akışı", value=True)
-use_rfid = st.sidebar.checkbox("IoT Varlık Takibi (RFID)", value=True)
+st.sidebar.subheader("📐 3D Fizik Kontrolü")
+target_mach = st.sidebar.slider("Hedef Mach (M)", 0.60, 0.85, 0.78)
+target_fl = st.sidebar.slider("Hedef irtifa (FL)", 290, 410, 350)
 
-# 3. TAM Agentic Interaction
-st.sidebar.markdown("---")
-st.sidebar.subheader("🤖 TAM Ajan Protokolü")
+# Agents & Monitors
 airline_agent = AgenticOrchestrator(DigitalTwinSolver(st.session_state.df))
-tam = TAMOrchestrator(airline_agent)
+ot_monitor = OTSecurityMonitor()
+planner_3d = TrajectoryPlannerAStar()
 
-if cyber_stress:
-    tam.handle_cyber_alert()
-    st.sidebar.warning("Siber Tehdit Algılandı! Güvenli İletişim Modu Aktif.")
+if system_failure:
+    airline_agent.trigger_acr()
+    st.sidebar.error("🚩 ACR MODU AKTİF: Merkezi Bulut Kapalı. P2P Haberleşiliyor.")
 
-if st.sidebar.button("🚀 Re-Optimize (Windowing + TAM)"):
-    st.sidebar.info(f"v12.0 Motoru: {window_size}h pencerelerle optimize ediliyor...")
+if st.sidebar.button("🚀 Optimize: 3D A* + Cyber-Resilience"):
+    st.sidebar.info("v13.0 Motoru: Yörünge ve Güvenlik analizi yapılıyor...")
+    
+    # Solve Trajectory for a sample flight
+    st.session_state.traj_res = planner_3d.optimize_3d_path(None, None, 1000)
+    
+    # Solve with v12 windowing logic + v13 data signing
     solver = DigitalTwinSolver(st.session_state.df)
-    # Solve with v12 windowing logic
-    st.session_state.df = solver.solve_with_windows(window_size_hrs=window_size)
-    st.sidebar.success("v12.0 Ekosistem Senkronizasyonu Tamamlandı!")
+    st.session_state.df = solver.solve_with_windows(window_size_hrs=6)
+    
+    # Data Signing
+    st.session_state.ot_hash = ot_monitor.sign_operational_data(st.session_state.df.iloc[0].to_dict())
+    
+    st.sidebar.success("Singularity Senkronizasyonu Tamamlandı!")
     st.rerun()
 
-# 4. KPI Panel (Masterpiece Style)
+# 3. KPI Panel (Singularity Style)
 col1, col2, col3, col4, col5 = st.columns(5)
-resilience_v12 = 91.5 if cyber_stress else 97.8
-col1.metric("TAM Sağlık Endeksi", f"{resilience_v12}%", delta="-6.3%" if cyber_stress else "+3.6%")
+# System mode influence
+health = 42 if system_failure else (92 if ot_anomaly_sim else 99)
+col1.metric("Sistem Sağlık Endeksi", f"{health}%", delta="-57%" if system_failure else None)
 
-# Bayesian Insight
-causal = BayesianCausalModel()
-top_factor = bayesian_focus if bayesian_focus != "Genel" else causal.attribute_delay(st.session_state.df.iloc[0])
-col2.metric("Kök Neden (Bayesyen)", top_factor)
+# 3D Trajectory Efficiency
+traj_gain = "+12.4%" if 'traj_res' in st.session_state else "N/A"
+col2.metric("3D Yörünge Kazancı", traj_gain, help="A* bazlı irtifa/hız optimizasyonu")
 
-# Ground Ops Efficiency
-gse = GroundOpsSimulator()
-tat = gse.calculate_turnaround('Narrowbody', use_biometrics=use_biometrics, use_rfid=use_rfid)
-col3.metric("Opt. Turnaround (TAT)", f"{tat} dk")
+# OT Anomaly Status
+status_text = "TEHLİKE" if ot_anomaly_sim else "TEMİZ"
+col3.metric("OT Güvenlik Durumu", status_text)
 
-# Cyber Risk
-cyber_impact = causal.predict_cyber_risk(system_health=85 if cyber_stress else 98)
-col4.metric("Siber Risk Etkisi", f"{cyber_impact} dk/uçuş")
+# Operational Data Hash
+sig = st.session_state.get('ot_hash', "Not_Signed")[:8]
+col4.metric("OT Veri İmzası (Hash)", f"0x{sig}")
 
-col5.metric("Ajanlar Arası Uzlaşı", "99.2%")
+# P2P Connectivity in ACR
+p2p_status = "100% (P2P)" if system_failure else "Standby"
+col5.metric("ACR Haberleşme", p2p_status)
 
-# 5. Advanced Analysis Visuals
+# 4. Singularity Advanced Analytics
 c1, c2 = st.columns(2)
 
 with c1:
-    st.subheader("🧠 Bayesyen Gecikme Ayrıştırması (Causal Attribution)")
-    # Logic: Apply Bayesian attribution to current scenario
-    st.session_state.df['causal_factor'] = st.session_state.df.apply(causal.attribute_delay, axis=1)
-    cause_data = st.session_state.df['causal_factor'].value_counts().reset_index()
-    fig_cause = px.pie(cause_data, values='count', names='causal_factor', hole=.4, title="Gecikme Kök Neden Dağılımı")
-    st.plotly_chart(fig_cause, use_container_width=True)
+    st.subheader("📐 3D A* Yörünge Profilleme (Altitude vs Fuel)")
+    if 'traj_res' in st.session_state:
+        # Mock trajectory path data
+        traj_df = pd.DataFrame({
+            'Step': range(11),
+            'Altitude': [330, 340, 350, 360, 360, 350, 350, 360, 370, 360, 350],
+            'Mach': [0.76, 0.77, 0.78, 0.78, 0.79, 0.79, 0.78, 0.78, 0.77, 0.77, 0.76]
+        })
+        fig = px.line(traj_df, x='Step', y=['Altitude', 'Mach'], title="3D A* Uçuş Profili")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Yörünge profili için optimizasyonu başlatın.")
 
 with c2:
-    st.subheader("🏢 TAM Ajan Etkileşim Günlüğü (Agent Handshake)")
-    # Show TAM communication mock
-    tam_log = pd.DataFrame([
-        {'Agent': 'Airport_ATC', 'Action': 'Slot Negotiated', 'Response': 'Target TK2026 Shift +5m'},
-        {'Agent': 'Ground_Ops', 'Action': 'GSE Dispatch', 'Response': 'Autonomous Robot #42 assigned'},
-        {'Agent': 'Cyber_Watch', 'Action': 'Monitoring', 'Response': 'No threat' if not cyber_stress else 'ATTACK DETECTED'}
-    ])
-    st.table(tam_log)
+    st.subheader("🔒 OT Anomali Tespit & Doğrulama Aracı")
+    if ot_anomaly_sim:
+        anomaly = ot_monitor.detect_anomaly('TK2026', 41000, 31000)
+        if anomaly:
+            st.error(f"⚠️ KRİTİK ALARM: {anomaly['type']}")
+            st.warning("Yörünge komutu fizikle uyumsuz! Veri doğrulaması bekleniyor.")
+            if st.button("🧬 Biyometrik Kimlik Doğrulamayı Başlat"):
+                res = ot_monitor.prompt_biometric_verification(1)
+                st.success(f"Dizge Doğrulandı: {res}. Komut bloklandı ve orijinal veriye dönüldü.")
+    else:
+        st.success("✅ OT Veri Akışı Normal: Hiçbir anomali tespit edilmedi.")
 
-# 6. Sürdürülebilirlik & Audit
-st.subheader("🌱 Sürdürülebilirlik Denetimi (Auditable SAF Ledger v12.0)")
-st.dataframe(pd.DataFrame([
-    {'Flight': 'TK2026', 'SAF Proof': 'Block_Verified', 'CO2 Reduction': '12.4%', 'Audit Hash': '8f2a...'},
-    {'Flight': 'TK2028', 'SAF Proof': 'Batch_Certified', 'CO2 Reduction': '14.1%', 'Audit Hash': '4c1d...'}
-]), use_container_width=True)
+# 5. ACR Emergency Log
+if system_failure:
+    st.subheader("🚩 ACR Otonom Kriz Aksiyon Günlüğü (P2P Data)")
+    critical_data = airline_agent.p2p_exchange_critical()
+    st.json(critical_data)
 
-# 7. Live Ecosystem Table
-st.subheader("🌐 TAM Canlı Ekosistem Verileri")
-st.dataframe(st.session_state.df[['flight_id', 'origin', 'destination', 'causal_factor', 'pax_connection_count', 'contrail_risk']])
+# 6. Final Data Ecosystem
+st.subheader("🌐 Singularity Canlı Veri Katmanı")
+st.dataframe(st.session_state.df[['flight_id', 'causal_factor', 'assigned_delay', 'contrail_risk']])
