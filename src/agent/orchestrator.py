@@ -16,6 +16,10 @@ class AgenticOrchestrator:
         """
         Agent analyzes the current situation and identifies bottlenecks.
         """
+        # Ensure column exists
+        if 'assigned_delay' not in scenario_df.columns:
+            scenario_df['assigned_delay'] = 0
+            
         # Logic: Find aircraft with most delays or crew fatigue issues
         delays = scenario_df[scenario_df['assigned_delay'] > 30]
         if len(delays) > 5:

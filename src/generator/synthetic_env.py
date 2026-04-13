@@ -50,7 +50,8 @@ class AdvancedAirlineSimulator:
         """
         flights = []
         # Use timezone-aware UTC for all calculations
-        start_date = datetime(2026, 6, 1, 0, 0, tzinfo=pd.Timestamp('UTC').tzinfo)
+        from datetime import timezone
+        start_date = datetime(2026, 6, 1, 0, 0, tzinfo=timezone.utc)
         
         for day in range(days):
             current_day = start_date + timedelta(days=day)
