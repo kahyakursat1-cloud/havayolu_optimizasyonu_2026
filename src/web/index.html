@@ -3,191 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviation Singularity | Enterprise v14.0</title>
+    <title>Aviation Singularity | Master Enterprise v14.3</title>
+    <!-- External Assets with failover concepts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
         
+        /* v14.3 IRON STABILITY CORE CSS (No-Tailwind Fallback) */
+        * { box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: #020617; 
-            color: #f8fafc;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
+            background: #020617 !important; 
+            color: #f8fafc !important;
+            margin: 0 !important; 
+            padding: 0 !important;
+            display: flex !important;
+            flex-direction: row !important;
+            height: 100vh !important;
+            width: 100vw !important;
+            overflow: hidden !important;
         }
 
-        /* Fallback Layout: Side-by-side aside & main */
         aside {
-            display: flex;
-            flex-direction: column;
-            width: 320px;
-            height: 100%;
-            flex-shrink: 0;
+            display: flex !important;
+            flex-direction: column !important;
+            width: 300px !important;
+            height: 100% !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+            flex-shrink: 0 !important;
+            padding: 1.5rem !important;
+            z-index: 100;
         }
 
         main {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            height: 100%;
-            overflow: hidden;
-            position: relative;
+            display: flex !important;
+            flex-direction: column !important;
+            flex-grow: 1 !important;
+            height: 100% !important;
+            overflow: hidden !important;
+            position: relative !important;
+            padding: 2rem !important;
+            background: #020617 !important;
+        }
+
+        .main-grid {
+            display: grid !important;
+            grid-template-cols: 2fr 1fr !important;
+            grid-gap: 1.5rem !important;
+            flex: 1 !important;
+            min-height: 0 !important;
         }
 
         .orbitron { font-family: 'Orbitron', sans-serif; }
-
-        .glass {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .neon-blue { color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
         .neon-border { border-color: #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
 
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="h-screen w-screen flex">
+<body>
 
-    <!-- Sidebar: Agentic Control -->
-    <aside class="w-80 h-full glass border-r border-slate-800 flex flex-col p-6 z-10">
-        <div class="flex items-center gap-3 mb-10">
-            <div class="w-10 h-10 bg-sky-500 rounded-lg flex items-center justify-center neon-border">
-                <i data-lucide="plane-takeoff" class="text-white w-6 h-6"></i>
+    <!-- Sidebar -->
+    <aside class="glass">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:2.5rem;">
+            <div style="width:2.5rem; height:2.5rem; background:#0ea5e9; border-radius:0.5rem; display:flex; align-items:center; justify-content:center;" class="neon-border">
+                <i data-lucide="plane-takeoff" style="color:white; width:1.5rem; height:1.5rem;"></i>
             </div>
-            <h1 class="orbitron text-xl font-bold tracking-tighter neon-blue">SINGULARITY</h1>
+            <h1 class="orbitron neon-blue" style="font-size:1.25rem; font-weight:bold; letter-spacing:-0.05em; margin:0;">SINGULARITY</h1>
         </div>
 
-        <nav class="flex-1 space-y-6">
+        <nav style="flex:1; display:flex; flex-direction:column; gap:1.5rem;">
             <div>
-                <p class="text-xs uppercase text-slate-500 font-bold mb-4">Command Core</p>
-                <div class="space-y-2">
-                    <button class="w-full flex items-center gap-3 p-3 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                        <span class="font-semibold">Operations</span>
-                    </button>
-                    <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition text-slate-400">
-                        <i data-lucide="shield-check" class="w-5 h-5"></i>
-                        <span>Cyber Health</span>
-                    </button>
+                <p style="font-size:0.7rem; text-transform:uppercase; color:#64748b; font-weight:bold; margin-bottom:1rem;">Command Core</p>
+                <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                    <div style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; border-radius:0.75rem; background:rgba(14,165,233,0.1); color:#38bdf8; border:1px solid rgba(14,165,233,0.2);">
+                        <i data-lucide="layout-dashboard" style="width:1.25rem; height:1.25rem;"></i>
+                        <span style="font-weight:600;">Operations</span>
+                    </div>
                 </div>
             </div>
 
-            <div>
-                <p class="text-xs uppercase text-slate-500 font-bold mb-4">Autonomous Agents</p>
-                <div id="agent-logs" class="space-y-3 max-h-60 overflow-y-auto pr-2">
-                    <div class="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10 text-xs">
-                        <span class="text-emerald-400 font-bold">[AGENT]</span> System Stable. No anomalies.
-                    </div>
+            <div style="flex:1; display:flex; flex-direction:column;">
+                <p style="font-size:0.7rem; text-transform:uppercase; color:#64748b; font-weight:bold; margin-bottom:1rem;">Autonomous Agents</p>
+                <div id="agent-logs" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:0.75rem; max-height:400px; padding-right:0.5rem;">
+                    <!-- Logs go here -->
                 </div>
             </div>
         </nav>
 
-        <div class="mt-auto pt-6 border-t border-slate-800">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
-                    <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
-                </div>
-                <div class="text-xs">
-                    <p class="font-bold">Fleet Admin</p>
-                    <p class="text-slate-500">v14.0 Enterprise</p>
-                </div>
+        <div style="margin-top:auto; padding-top:1.5rem; border-top:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:0.75rem;">
+            <div style="width:2rem; height:2rem; border-radius:50%; background:#334155; display:flex; align-items:center; justify-content:center;">
+                <i data-lucide="user" style="width:1rem; height:1rem; color:#94a3b8;"></i>
+            </div>
+            <div style="font-size:0.7rem;">
+                <p style="font-weight:bold; margin:0;">Fleet Admin</p>
+                <p style="color:#64748b; margin:0;">v14.3 Iron Stability</p>
             </div>
         </div>
     </aside>
 
-    <main class="flex-1 h-full overflow-hidden flex flex-col p-8 gap-8 relative">
-        
-        <!-- v14.2 Processing Overlay -->
-        <div id="loading-overlay" class="hidden absolute inset-0 z-50 glass flex flex-col items-center justify-center gap-4 transition-all duration-300">
-            <div class="w-16 h-16 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
-            <p class="orbitron text-sky-400 animate-pulse tracking-widest text-sm">SINGULARITY ENGINE OPTIMIZING...</p>
+    <main>
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="hidden" style="position:absolute; inset:0; z-index:200; background:rgba(15,23,42,0.8); backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem;">
+            <div style="width:3rem; height:3rem; border:4px solid #0ea5e9; border-top-color:transparent; border-radius:50%; animation: spin 1s linear infinite;"></div>
+            <p class="orbitron neon-blue" style="letter-spacing:0.2em; font-size:0.8rem;">ENGINE PROCESSING DATA...</p>
         </div>
 
-        <!-- Header KPI -->
-        <header class="flex justify-between items-center">
-            <div class="grid grid-cols-4 gap-8 w-full max-w-5xl">
-                <div class="glass p-4 rounded-2xl">
-                    <p class="text-slate-400 text-xs mb-1">Ecosystem Health</p>
-                    <h2 class="text-2xl font-bold text-emerald-400 orbitron">99.8%</h2>
+        <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+            <div style="display:grid; grid-template-cols: repeat(4, 1fr); gap:1.5rem; width:100%; max-width:1000px;">
+                <div class="glass" style="padding:1rem; border-radius:1rem;">
+                    <p style="color:#64748b; font-size:0.7rem; margin:0;">Ecosystem Health</p>
+                    <h2 class="orbitron" style="color:#10b981; margin:0.25rem 0 0 0; font-size:1.5rem;">99.9%</h2>
                 </div>
-                <div class="glass p-4 rounded-2xl">
-                    <p class="text-slate-400 text-xs mb-1">Cyber Risk Level</p>
-                    <h2 class="text-2xl font-bold text-sky-400 orbitron">MINIMAL</h2>
+                <div class="glass" style="padding:1rem; border-radius:1rem;">
+                    <p style="color:#64748b; font-size:0.7rem; margin:0;">Cyber Risk</p>
+                    <h2 class="orbitron" style="color:#38bdf8; margin:0.25rem 0 0 0; font-size:1.5rem;">MINIMAL</h2>
                 </div>
-                <div class="glass p-4 rounded-2xl">
-                    <p class="text-slate-400 text-xs mb-1">ACR Reliability</p>
-                    <h2 class="text-2xl font-bold text-purple-400 orbitron">94.2%</h2>
+                <div class="glass" style="padding:1rem; border-radius:1rem;">
+                    <p style="color:#64748b; font-size:0.7rem; margin:0;">ACR Ready</p>
+                    <h2 class="orbitron" style="color:#a855f7; margin:0.25rem 0 0 0; font-size:1.5rem;">100%</h2>
                 </div>
-                <div class="glass p-4 rounded-2xl">
-                    <p class="text-slate-400 text-xs mb-1">SAF Compliance</p>
-                    <h2 class="text-2xl font-bold text-orange-400 orbitron">CORSIA-26</h2>
+                <div class="glass" style="padding:1rem; border-radius:1rem;">
+                    <p style="color:#64748b; font-size:0.7rem; margin:0;">Compliance</p>
+                    <h2 class="orbitron" style="color:#f59e0b; margin:0.25rem 0 0 0; font-size:1.2rem;">CORSIA-26</h2>
                 </div>
             </div>
             
-            <button onclick="runOptimize()" class="px-8 py-4 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all active:scale-95 orbitron tracking-wider">
+            <button onclick="runOptimize()" class="orbitron" style="padding:1rem 2rem; background:#0ea5e9; color:white; border:none; border-radius:1rem; cursor:pointer; font-weight:bold; letter-spacing:0.1em; box-shadow:0 0 20px rgba(14,165,233,0.3);">
                 RE-OPTIMIZE
             </button>
         </header>
-
-        <!-- Main Analytics Grid -->
-        <section class="flex-1 grid grid-cols-3 gap-8 min-h-0">
-            
-            <!-- Left: Trajectory & Security -->
-            <div class="col-span-2 flex flex-col gap-8">
-                <div class="flex-1 glass rounded-3xl p-6 relative">
-                    <h3 class="orbitron text-sm mb-4 text-slate-400 tracking-widest">3D TRAJECTORY DYNAMICS</h3>
-                    <canvas id="trajectoryChart" class="w-full h-full"></canvas>
+        
+        <section class="main-grid">
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div class="glass" style="flex:1; border-radius:1.5rem; padding:1.5rem; min-height:0; display:flex; flex-direction:column;">
+                    <h3 class="orbitron" style="font-size:0.7rem; color:#64748b; margin:0 0 1rem 0; letter-spacing:0.2em;">3D TRAJECTORY DYNAMICS</h3>
+                    <div style="flex:1; min-height:0;"><canvas id="trajectoryChart"></canvas></div>
                 </div>
-                <div class="h-64 glass rounded-3xl p-6 flex flex-col">
-                    <h3 class="orbitron text-sm mb-4 text-slate-400 tracking-widest">CYBER ANOMALY FEED</h3>
-                    <div id="cyber-feed" class="flex-1 space-y-2 overflow-y-auto">
-                        <p class="text-slate-500 text-xs italic">Scanning OT network for data injections...</p>
-                    </div>
+                <div class="glass" style="height:200px; border-radius:1.5rem; padding:1.5rem; display:flex; flex-direction:column;">
+                    <h3 class="orbitron" style="font-size:0.7rem; color:#64748b; margin:0 0 0.75rem 0; letter-spacing:0.2em;">CYBER ANOMALY FEED</h3>
+                    <div id="cyber-feed" style="flex:1; overflow-y:auto; color:#475569; font-size:0.7rem; font-style:italic;">Scanning OT network...</div>
                 </div>
             </div>
 
-            <!-- Right: Bayesian & Fleet -->
-            <div class="flex flex-col gap-8">
-                <div class="flex-1 glass rounded-3xl p-6">
-                    <h3 class="orbitron text-sm mb-4 text-slate-400 tracking-widest">CAUSAL ATTRIBUTION</h3>
-                    <canvas id="causalChart"></canvas>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div class="glass" style="flex:1; border-radius:1.5rem; padding:1.5rem; display:flex; flex-direction:column; min-height:0;">
+                    <h3 class="orbitron" style="font-size:0.7rem; color:#64748b; margin:0 0 1rem 0; letter-spacing:0.2em;">CAUSAL ANALYSIS</h3>
+                    <div style="flex:1; min-height:0;"><canvas id="causalChart"></canvas></div>
                 </div>
-                <div class="flex-1 glass rounded-3xl p-6 overflow-hidden">
-                    <h3 class="orbitron text-sm mb-4 text-slate-400 tracking-widest">LIVE FLEET CORE</h3>
-                    <div class="overflow-y-auto h-full pb-10">
-                        <table class="w-full text-xs text-left">
-                            <thead class="text-slate-500 sticky top-0 bg-slate-900 px-4">
-                                <tr>
-                                    <th class="pb-2 px-2">FLIGHT</th>
-                                    <th class="pb-2 px-2">ALT</th>
-                                    <th class="pb-2 px-2">MACH</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fleet-table-body" class="divide-y divide-slate-800">
-                                <!-- JS Populated -->
-                            </tbody>
+                <div class="glass" style="flex:1; border-radius:1.5rem; padding:1.5rem; display:flex; flex-direction:column; min-height:0;">
+                    <h3 class="orbitron" style="font-size:0.7rem; color:#64748b; margin:0 0 1rem 0; letter-spacing:0.2em;">LIVE FLEET</h3>
+                    <div style="flex:1; overflow-y:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:0.7rem;">
+                            <tbody id="fleet-table-body"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
-
         </section>
-
     </main>
 
-    <script src="script.js"></script>
-    <script>
-        lucide.createIcons();
-    </script>
+    <style>
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+
+    <script src="script.js?v=14.3.2"></script>
 </body>
 </html>
