@@ -14,6 +14,7 @@ from src.generator.synthetic_env import AdvancedAirlineSimulator
 from src.optimizer.trajectory_a_star import TrajectoryPlannerAStar
 from src.security.ot_monitor import OTSecurityMonitor
 from src.models.causal_intelligence import BayesianCausalModel
+from src.analytics.kpi_engine import AviationKPIEngine
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -35,6 +36,7 @@ class AppState:
         self.df = self.sim.generate_full_scenario(days=1)
         self.ot_monitor = OTSecurityMonitor()
         self.causal = BayesianCausalModel()
+        self.kpi_engine = AviationKPIEngine()
 
 state = AppState()
 
@@ -44,9 +46,9 @@ async def get_scenario():
     data_json = state.df.to_json(orient='records', date_format='iso')
     return json.loads(data_json)
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    return {"status": "error", "message": str(exc), "type": type(exc).__name__}
+@app.get("/api/analytics/kpi")
+async def get_kpis():
+    return state.kpi_engine.calculate_fleet_kpis(state.df)
 
 @app.post("/api/optimize")
 async def optimize(window_size: int = 6):
@@ -57,18 +59,17 @@ async def optimize(window_size: int = 6):
         return {"status": "success", "message": f"Optimized with {window_size}h window"}
     raise HTTPException(status_code=500, detail="Optimization failed")
 
-@app.get("/api/trajectory/{flight_id}")
-async def get_trajectory(flight_id: str):
-    planner = TrajectoryPlannerAStar()
-    res = planner.optimize_3d_path(None, None, 1000)
-    return res
-
-@app.get("/api/security/status")
-async def security_status():
-    return {
-        "anomalies": state.ot_monitor.anomalies_detected,
-        "health": 98
-    }
+@app.post("/api/stress-test")
+async def stress_test(hub: str = 'IST'):
+    # 1. Trigger Disruption
+    state.df = state.sim.trigger_disruption(state.df, hub=hub)
+    # 2. Run Reactive Recovery
+    solver = DigitalTwinSolver(state.df)
+    result = solver.solve_disruption(f"Mass Delay at {hub}")
+    if result is not None:
+        state.df = result
+        return {"status": "success", "message": f"Shock recovery completed for {hub}"}
+    raise HTTPException(status_code=500, detail="Recovery failed")
 
 # Serve Static Files for v14.0 Frontend
 web_dir = os.path.join(os.path.dirname(__file__), '../web')

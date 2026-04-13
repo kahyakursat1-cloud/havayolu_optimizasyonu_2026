@@ -145,7 +145,20 @@ class AdvancedAirlineSimulator:
         df = pd.DataFrame(flights)
         df['departure_time'] = pd.to_datetime(df['departure_time'], utc=True)
         df['arrival_time'] = pd.to_datetime(df['arrival_time'], utc=True)
+        # Standard initial state
+        df['is_canceled'] = 0
+        df['assigned_delay'] = 0
+        df['saf_usage'] = 0.0
         return df.dropna()
+
+    def trigger_disruption(self, df, hub='IST', delay_mins=120):
+        """
+        🚀 v16.0 Resilience: Injects massive delays at a hub to test recovery.
+        """
+        mask = (df['origin'] == hub) & (df['departure_time'].dt.hour < 12)
+        df.loc[mask, 'assigned_delay'] = delay_mins
+        df.loc[mask, 'causal_factor'] = 'Operational Failure'
+        return df
 
         
         return pd.DataFrame(flights)
