@@ -10,15 +10,20 @@ class GroundOpsSimulator:
     def __init__(self):
         # Literature: Otonom bagaj robotlari ve yakit drone'lari TAT'i %20 iyilestirebiliyor.
         self.gse_efficiency_gain = 0.20 
+        self.rfid_asset_gain = 0.05      # IoT Asset Tracking (RFID)
+        self.biometric_boarding_gain = 0.10 # Biometric hallways
         
-    def calculate_turnaround(self, ac_type, is_autonomous=True):
+    def calculate_turnaround(self, ac_type, is_autonomous=True, use_biometrics=True, use_rfid=True):
         base_tat = 45 # Default 45 mins
         if ac_type == 'Widebody': base_tat = 90
         
-        if is_autonomous:
-            actual_tat = base_tat * (1 - self.gse_efficiency_gain)
-            return int(actual_tat)
-        return base_tat
+        gain = 0
+        if is_autonomous: gain += self.gse_efficiency_gain
+        if use_biometrics: gain += self.biometric_boarding_gain
+        if use_rfid: gain += self.rfid_asset_gain
+        
+        actual_tat = base_tat * (1 - gain)
+        return int(actual_tat)
 
 class SustainabilityLedger:
     """
