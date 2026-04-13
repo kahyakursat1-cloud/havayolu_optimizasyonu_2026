@@ -167,50 +167,48 @@ class DigitalTwinSolver:
         if t2_dep < t1_arr + pd.Timedelta(minutes=turn_min): return False
         return True
 
-    def solve_with_windows(self, window_size_hrs=6, max_time_per_window=10):
+    def solve_with_windows(self, window_size_hrs=6, max_time_per_window=5):
         """
-        🚀 v14.1 Hardened Sliding Window: Carries aircraft state between chunks.
+        🚀 v17.1 Hardened Sliding Window: Reduced latency to prevent UI hangs.
         Includes Self-Healing fallback for logical conflicts.
         """
-        logger.info(f"--- v14.1 Hardened Window Solver (Size: {window_size_hrs}h) ---")
+        logger.info(f"--- v17.1 Hardened Window Solver (Window: {window_size_hrs}h, T-Limit: {max_time_per_window}s) ---")
         full_results = []
-        last_known_locations = {} # {aircraft_id: airport}
         
-        sorted_flights = self.flights.sort_values('departure_time')
+        sorted_flights = self.flights.sort_values('departure_time').copy()
         start_time = sorted_flights['departure_time'].min()
         end_time = sorted_flights['departure_time'].max()
         
         current_start = start_time
-        while current_start < end_time:
+        while current_start <= end_time:
             current_end = current_start + pd.Timedelta(hours=window_size_hrs)
             window_df = sorted_flights[(sorted_flights['departure_time'] >= current_start) & 
-                                       (sorted_flights['departure_time'] < current_end)]
+                                       (sorted_flights['departure_time'] < current_end)].copy()
             
             if not window_df.empty:
                 try:
-                    # v14.1 Hardening: Inject last known locations into constraints (conceptually)
-                    # For a real implementation, we would modify the MILP to require 
-                    # origin == last_known_locations[ac]
+                    # Individual window solver call
                     window_solver = DigitalTwinSolver(window_df)
                     result = window_solver.solve_winning(max_time_sec=max_time_per_window)
                     
-                    if result is not None:
-                        # Update last known locations from window output
-                        for _, row in result.iterrows():
-                            last_known_locations[row['aircraft_id']] = row['destination']
+                    if result is not None and not result.empty:
                         full_results.append(result)
                     else:
-                        raise ValueError("Window optimization failed to find feasible solution.")
+                        logger.warning(f"Window [{current_start}] failed optimization. Falling back to original.")
+                        full_results.append(window_df)
                         
                 except Exception as e:
-                    logger.error(f"⚠️ Self-Healing Triggered: {e}")
-                    # Fallback: Greedy Robust Heuristic for this window
-                    # Simple robust assignment without full MILP
-                    full_results.append(window_df) # Conceptually 'accept existing' as fallback
+                    logger.error(f"⚠️ v17.1 Self-Healing Triggered in window {current_start}: {e}")
+                    full_results.append(window_df)
             
             current_start = current_end
+            if window_size_hrs == 0: break # Safety exit
             
-        return pd.concat(full_results).drop_duplicates('flight_id') if full_results else None
+        if not full_results: return self.flights
+        
+        # Merge and drop duplicates, ensuring the latest (optimized) versions are kept
+        final_df = pd.concat(full_results).drop_duplicates('flight_id', keep='last')
+        return final_df
 
     def _check_time_feasibility_v15(self, f1, f2, crew_mode=False):
         """

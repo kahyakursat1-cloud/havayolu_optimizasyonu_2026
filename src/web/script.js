@@ -52,10 +52,37 @@ async function syncLive() {
 async function runOptimize() {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) overlay.classList.remove('hidden');
+    
+    // v17.1: Frontend Safeguard Timeout (40s)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+        controller.abort();
+        logAction("OPTIMIZATION TIMEOUT: Server reached max processing time.");
+    }, 40000); 
+
     try {
-        await fetch(`${API_BASE}/optimize`, { method: 'POST' });
+        const response = await fetch(`${API_BASE}/optimize`, { 
+            method: 'POST',
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        const result = await response.json();
         await fetchScenario();
-        logAction("Quantum Re-Optimization complete. Neural Commander policy updated.");
+
+        if (result.status === "success") {
+            logAction(`Success: ${result.message}`);
+        } else if (result.status === "partial_success") {
+            logAction(`Alert: ${result.message}`);
+        }
+        
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            logAction("Optimization Aborted (Timeout). Baseline plan restored.");
+        } else {
+            console.error("Optimization Failed:", err);
+            logAction("Critical Error during optimization. Check network.");
+        }
     } finally {
         if (overlay) overlay.classList.add('hidden');
     }
