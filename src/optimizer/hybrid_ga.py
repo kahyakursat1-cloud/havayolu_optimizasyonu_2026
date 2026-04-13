@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 import random
+import logging
+
+# Professional Logging Configuration
+logger = logging.getLogger(__name__)
 
 class HybridGA:
     def __init__(self, flights_df, pop_size=30, generations=20):
@@ -8,7 +12,11 @@ class HybridGA:
         df = flights_df.copy()
         if 'is_canceled' not in df.columns: df['is_canceled'] = 0
         if 'assigned_delay' not in df.columns: df['assigned_delay'] = 0
-        if 'assigned_ac' not in df.columns: df['assigned_ac'] = df['ac_id']
+        if 'assigned_ac' not in df.columns: df['assigned_ac'] = df['aircraft_id']
+        
+        # HARDENING: Ensure time columns are datetime objects
+        df['departure_time'] = pd.to_datetime(df['departure_time'])
+        df['arrival_time'] = pd.to_datetime(df['arrival_time'])
         
         self.flights = df
         self.pop_size = pop_size
@@ -65,7 +73,7 @@ class HybridGA:
             while len(new_pop) < self.pop_size:
                 p1, p2 = random.sample(population[:10], 2)
                 child = p1.copy()
-                ac_list = self.flights['ac_id'].unique()
+                ac_list = self.flights['aircraft_id'].unique()
                 ac_to_swap = random.choice(ac_list)
                 
                 # Crossover logic
