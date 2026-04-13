@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviation Singularity | Enterprise v14.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #020617; /* Dark slate */
+            color: #f8fafc;
+            overflow: hidden;
+        }
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .neon-blue { color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+        .neon-border { border-color: #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen w-screen flex">
+
+    <!-- Sidebar: Agentic Control -->
+    <aside class="w-80 h-full glass border-r border-slate-800 flex flex-col p-6 z-10">
+        <div class="flex items-center gap-3 mb-10">
+            <div class="w-10 h-10 bg-sky-500 rounded-lg flex items-center justify-center neon-border">
+                <i data-lucide="plane-takeoff" class="text-white w-6 h-6"></i>
+            </div>
+            <h1 class="orbitron text-xl font-bold tracking-tighter neon-blue">SINGULARITY</h1>
+        </div>
+
+        <nav class="flex-1 space-y-6">
+            <div>
+                <p class="text-xs uppercase text-slate-500 font-bold mb-4">Command Core</p>
+                <div class="space-y-2">
+                    <button class="w-full flex items-center gap-3 p-3 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                        <span class="font-semibold">Operations</span>
+                    </button>
+                    <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition text-slate-400">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        <span>Cyber Health</span>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <p class="text-xs uppercase text-slate-500 font-bold mb-4">Autonomous Agents</p>
+                <div id="agent-logs" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                    <div class="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10 text-xs">
+                        <span class="text-emerald-400 font-bold">[AGENT]</span> System Stable. No anomalies.
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="mt-auto pt-6 border-t border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+                    <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                </div>
+                <div class="text-xs">
+                    <p class="font-bold">Fleet Admin</p>
+                    <p class="text-slate-500">v14.0 Enterprise</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 h-full overflow-hidden flex flex-col p-8 gap-8">
+        
+        <!-- Header KPI -->
+        <header class="flex justify-between items-center">
+            <div class="grid grid-cols-4 gap-8 w-full max-w-5xl">
+                <div class="glass p-4 rounded-2xl">
+                    <p class="text-slate-400 text-xs mb-1">Ecosystem Health</p>
+                    <h2 class="text-2xl font-bold text-emerald-400 orbitron">99.8%</h2>
+                </div>
+                <div class="glass p-4 rounded-2xl">
+                    <p class="text-slate-400 text-xs mb-1">Cyber Risk Level</p>
+                    <h2 class="text-2xl font-bold text-sky-400 orbitron">MINIMAL</h2>
+                </div>
+                <div class="glass p-4 rounded-2xl">
+                    <p class="text-slate-400 text-xs mb-1">ACR Reliability</p>
+                    <h2 class="text-2xl font-bold text-purple-400 orbitron">94.2%</h2>
+                </div>
+                <div class="glass p-4 rounded-2xl">
+                    <p class="text-slate-400 text-xs mb-1">SAF Compliance</p>
+                    <h2 class="text-2xl font-bold text-orange-400 orbitron">CORSIA-26</h2>
+                </div>
+            </div>
+            
+            <button onclick="runOptimize()" class="px-8 py-4 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all active:scale-95 orbitron tracking-wider">
+                RE-OPTIMIZE
+            </button>
+        </header>
+
+        <!-- Main Analytics Grid -->
+        <section class="flex-1 grid grid-cols-3 gap-8 min-h-0">
+            
+            <!-- Left: Trajectory & Security -->
+            <div class="col-span-2 flex flex-col gap-8">
+                <div class="flex-1 glass rounded-3xl p-6 relative">
+                    <h3 class="orbitron text-sm mb-4 text-slate-400 tracking-widest">3D TRAJECTORY DYNAMICS</h3>
+                    <canvas id="trajectoryChart" class="w-full h-full"></canvas>
+                </div>
+                <div class="h-64 glass rounded-3xl p-6 flex flex-col">
+                    <h3 class="orbitron text-sm mb-4 text-slate-400 tracking-widest">CYBER ANOMALY FEED</h3>
+                    <div id="cyber-feed" class="flex-1 space-y-2 overflow-y-auto">
+                        <p class="text-slate-500 text-xs italic">Scanning OT network for data injections...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Bayesian & Fleet -->
+            <div class="flex flex-col gap-8">
+                <div class="flex-1 glass rounded-3xl p-6">
+                    <h3 class="orbitron text-sm mb-4 text-slate-400 tracking-widest">CAUSAL ATTRIBUTION</h3>
+                    <canvas id="causalChart"></canvas>
+                </div>
+                <div class="flex-1 glass rounded-3xl p-6 overflow-hidden">
+                    <h3 class="orbitron text-sm mb-4 text-slate-400 tracking-widest">LIVE FLEET CORE</h3>
+                    <div class="overflow-y-auto h-full pb-10">
+                        <table class="w-full text-xs text-left">
+                            <thead class="text-slate-500 sticky top-0 bg-slate-900 px-4">
+                                <tr>
+                                    <th class="pb-2 px-2">FLIGHT</th>
+                                    <th class="pb-2 px-2">ALT</th>
+                                    <th class="pb-2 px-2">MACH</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fleet-table-body" class="divide-y divide-slate-800">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
