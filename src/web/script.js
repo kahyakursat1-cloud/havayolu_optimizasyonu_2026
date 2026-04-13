@@ -12,6 +12,7 @@ let viewMode = '2D'; // '2D' or '3D'
 let scene, camera, renderer, globe;
 let aircraftMarkers = {}; // {flight_id: mesh}
 let pathLines = {}; // {flight_id: line}
+let hubGlow; // v17.6 IST Hub Glow
 
 const CITY_COORDS = {
     'IST': [0, 0],
@@ -123,22 +124,29 @@ function initThreeScene() {
     camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 2000);
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     
-    // v17.3 Fix: Ensure size is calculated after potential layout shifts
     const width = container.clientWidth || 800;
     const height = container.clientHeight || 600;
     renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
 
-    const grid = new THREE.GridHelper(400, 40, 0x334155, 0x1e293b);
+    // v17.6 Hub Glow (IST Center)
+    const glowGeo = new THREE.TorusGeometry(10, 0.6, 16, 100);
+    const glowMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.8 });
+    hubGlow = new THREE.Mesh(glowGeo, glowMat);
+    hubGlow.position.z = 2;
+    scene.add(hubGlow);
+
+    const grid = new THREE.GridHelper(600, 40, 0x334155, 0x1e293b);
     grid.rotation.x = Math.PI / 2;
+    grid.position.z = -1;
     scene.add(grid);
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const light = new THREE.PointLight(0x0ea5e9, 1.5, 500);
-    light.position.set(0, 0, 100);
+    const light = new THREE.PointLight(0x0ea5e9, 2.5, 800);
+    light.position.set(0, 0, 150);
     scene.add(light);
 
-    camera.position.set(0, -120, 180);
+    camera.position.set(0, -130, 200);
     camera.lookAt(0, 0, 0);
 
     animateThree();
@@ -147,6 +155,12 @@ function initThreeScene() {
 function animateThree() {
     requestAnimationFrame(animateThree);
     if (renderer && scene && camera) {
+        // v17.6 Pulsing Hub Effect
+        if (hubGlow) {
+            const s = 1 + Math.sin(Date.now() * 0.003) * 0.15;
+            hubGlow.scale.set(s, s, 1);
+            hubGlow.material.opacity = 0.4 + Math.sin(Date.now() * 0.003) * 0.2;
+        }
         renderer.render(scene, camera);
     }
 }
@@ -155,15 +169,25 @@ function drawFlightPath(flight_id, origin, dest) {
     if (pathLines[flight_id]) return;
     const start = CITY_COORDS[origin] || [0, 0];
     const end = CITY_COORDS[dest] || [50, 50];
+    
+    // v17.6 Dynamic Arc Height
+    const dist = Math.sqrt(Math.pow(end[0]-start[0], 2) + Math.pow(end[1]-start[1], 2));
+    const arcHeight = Math.min(80, dist / 3);
+
     const points = [];
     points.push(new THREE.Vector3(start[0], start[1], 0));
     const midX = (start[0] + end[0]) / 2;
     const midY = (start[1] + end[1]) / 2;
-    points.push(new THREE.Vector3(midX, midY, 20));
+    points.push(new THREE.Vector3(midX, midY, arcHeight));
     points.push(new THREE.Vector3(end[0], end[1], 0));
+    
     const curve = new THREE.CatmullRomCurve3(points);
-    const geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(20));
-    const material = new THREE.LineBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.3 });
+    const geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(25));
+    const material = new THREE.LineBasicMaterial({ 
+        color: dist > 150 ? 0x0ea5e9 : 0x38bdf8, 
+        transparent: true, 
+        opacity: dist > 150 ? 0.6 : 0.2 
+    });
     const line = new THREE.Line(geometry, material);
     scene.add(line);
     pathLines[flight_id] = line;
