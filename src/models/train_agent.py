@@ -4,9 +4,13 @@ import pandas as pd
 from stable_baselines3 import PPO
 from src.models.rl_env import AviationRLBotEnv
 from src.generator.synthetic_env import AdvancedAirlineSimulator
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def train_neural_commander():
-    print("🚀 Initializing Neural Commander Training Loop (v18.0 Fix)...")
+    logger.info("🚀 Initializing Neural Commander Training Loop (v19.0 10-Dim Obs Space)...")
     
     # Setup the simulator the right way
     sim = AdvancedAirlineSimulator(seed=42)
@@ -23,13 +27,13 @@ def train_neural_commander():
                 batch_size=64, 
                 tensorboard_log="./logs/ai_training/")
     
-    print("🧠 Brain Synapsing... Starting 25,000 training steps.")
+    logger.info("🧠 Brain Synapsing... Starting 25,000 training steps for 10-dim state space.")
     model.learn(total_timesteps=25000)
     
     # Save the professional grade model
-    model_path = os.path.join("src", "models", "shikra_v1")
+    model_path = os.path.join("src", "models", "shikra_v3_10dim")
     model.save(model_path)
-    print(f"✅ Training Complete. Neural model saved as {model_path}.zip")
+    logger.info(f"✅ Training Complete. Neural model saved as {model_path}.zip")
 
 if __name__ == "__main__":
     train_neural_commander()

@@ -9,4 +9,5 @@ services:
       - ./src/models:/app/src/models
     environment:
       - PRODUCTION=true
+      - ALLOWED_ORIGINS=http://localhost:8501,http://127.0.0.1:8501
     restart: unless-stopped

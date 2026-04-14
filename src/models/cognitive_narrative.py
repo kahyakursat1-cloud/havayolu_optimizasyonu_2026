@@ -16,10 +16,10 @@ class CognitiveNarrator:
         
         if os.path.exists(self.model_path):
             try:
-                # v34.2: Calibrated context for CPU stability (1024 is the healthy middle ground)
+                # v35.2: Expanded context for longer operational reports
                 self.llm = Llama(
                     model_path=self.model_path,
-                    n_ctx=1024, 
+                    n_ctx=2048, 
                     n_threads=2, 
                     verbose=False
                 )
@@ -52,7 +52,7 @@ class CognitiveNarrator:
         try:
             output = self.llm(
                 prompt,
-                max_tokens=256,
+                max_tokens=512, # v35.2: Higher ceiling for complete narratives
                 temperature=0.7, # v35.1: Increased for variety
                 stop=["<end_of_turn>", "user", "model"],
                 echo=False,

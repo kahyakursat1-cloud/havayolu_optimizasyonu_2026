@@ -22,22 +22,57 @@ let customLayer;
 // v32.0: AI Global State
 let evolutionStats = { xp: 0, cycles: 0, status: 'Stable' };
 
-let scene, camera, renderer;
+let scene, camera, renderer, radarPulse;
 let aircraftMarkers = {}; // {flight_id: {mesh: Mesh}}
+let lastRenderTime = Date.now();
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+let selectedFlightId = null;
+let flightTrajectoryLine = null;
+
 let lastNarrative = "";
+
+// v38.0: UI Panel Control
+window.closeFlightPanel = function() {
+    selectedFlightId = null;
+    isFollowMode = false;
+    const btn = document.getElementById('btn-follow');
+    if (btn) btn.classList.remove('active');
+    
+    document.getElementById('flight-detail-panel').classList.add('hidden');
+    if (flightTrajectoryLine) {
+        scene.remove(flightTrajectoryLine);
+        flightTrajectoryLine = null;
+    }
+}
+
+window.toggleFollowMode = function() {
+    isFollowMode = !isFollowMode;
+    const btn = document.getElementById('btn-follow');
+    if (btn) btn.classList.toggle('active', isFollowMode);
+    if (isFollowMode) {
+        logAction(`[RADAR] Camera lock initiated on ${selectedFlightId}.`);
+    } else {
+        logAction(`[RADAR] Camera lock released.`);
+    }
+}
 let isForesightActive = false;
 let foresightInterval = null;
+let isFollowMode = false;
 
 // v34.0: Tactical Typewriter Effect for Gemma Reports
-function typeWriter(elementId, text, speed = 30) {
+function typeWriter(elementId, text, speed = 25) {
     const element = document.getElementById(elementId);
     if (!element) return;
-    element.innerHTML = "";
+    element.innerText = "";
     let i = 0;
     function type() {
         if (i < text.length) {
-            element.innerHTML += text.charAt(i);
+            element.innerText += text.charAt(i);
             i++;
+            // v35.3: Automated Scroll-lock to follow the narrative flow
+            element.scrollTop = element.scrollHeight;
             setTimeout(type, speed);
         }
     }
@@ -148,14 +183,55 @@ async function syncLive() {
         const data = await response.json();
         
         if (data.active_flights) {
-            logAction(`Live Radar: ${data.count} aircraft tracked over IST hub.`);
-            if (badge) badge.innerText = "LIVE SYNCED";
+            logAction(`Radar Sync [${data.source}]: ${data.count} aircraft tracked.`);
+            if (badge) {
+                badge.innerText = data.offline ? "LIVE (SIM)" : "LIVE SYNCED";
+                badge.style.color = data.offline ? "#fbbf24" : "#10b981";
+            }
             updateLive3DMarkers(data.active_flights);
         }
     } catch (err) {
-        logAction("Sync Error: ADS-B node unreachable.");
-        if (badge) badge.innerText = "OFFLINE";
+        logAction(`Sync Error: ${err.message || 'ADS-B node unreachable'}`);
+        console.error("Sync Details:", err);
+        if (badge) {
+            badge.innerText = "OFFLINE";
+            badge.style.color = "#f43f5e";
+        }
     }
+}
+
+// --- 3D Airplane Mesh Generator ---
+function createAirplaneMesh(colorHex, emissiveHex, opacityScale = 0.95) {
+    const group = new THREE.Group();
+    const material = new THREE.MeshPhongMaterial({ 
+        color: colorHex, 
+        emissive: emissiveHex || colorHex, 
+        emissiveIntensity: 0.7,
+        transparent: true,
+        opacity: opacityScale
+    });
+    
+    // Fuselage
+    const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(180, 180, 2400, 12), material);
+    group.add(fuselage);
+    
+    // Wings
+    const wings = new THREE.Mesh(new THREE.BoxGeometry(2800, 400, 80), material);
+    wings.position.y = 200; 
+    group.add(wings);
+    
+    // Tail
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(900, 250, 80), material);
+    tail.position.y = -1000; 
+    group.add(tail);
+    
+    // Vertical Fin
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(80, 300, 350), material);
+    fin.position.y = -1000;
+    fin.position.z = 200;
+    group.add(fin);
+
+    return group;
 }
 
 // v32.0: Real-Time ADS-B Marker Engine for MapLibre
@@ -179,21 +255,22 @@ function updateLive3DMarkers(liveFlights) {
         const latOffset = (f.lat - 41.27) * 111320;
         const alt = f.alt || 3000;
 
-        const geometry = new THREE.ConeGeometry(800, 2200, 4); 
-        const material = new THREE.MeshPhongMaterial({ 
-            color: f.status === "DELAYED" ? 0xf43f5e : 0x0ea5e9,
-            emissive: f.status === "DELAYED" ? 0xf43f5e : 0x0ea5e9,
-            emissiveIntensity: 0.8,
-            transparent: true,
-            opacity: 0.95
-        });
-        const mesh = new THREE.Mesh(geometry, material);
+        const isDelayed = f.status === "DELAYED";
+        const color = isDelayed ? 0xf43f5e : 0xfacc15; // Yellow for live Flightradar24 feel
+        const mesh = createAirplaneMesh(color, color, 0.95);
         mesh.position.set(lonOffset, latOffset, alt);
         mesh.rotateX(Math.PI / 2);
         mesh.rotation.z = - (f.heading * Math.PI / 180);
         
+        // The children do not need userData anymore
+        
         // Internal tactical pulse effect data
         mesh.userData = { 
+            flight_id: f.flight_id,
+            velocity: f.velocity,
+            alt: alt,
+            heading: f.heading,
+            status: f.status,
             baseScale: 1.0, 
             pulseSpeed: 2 + Math.random(),
             isDelayed: f.status === "DELAYED"
@@ -244,8 +321,8 @@ async function runOptimize() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
         controller.abort();
-        logAction("OPTIMIZATION TIMEOUT: Server reached max processing time.");
-    }, 40000); 
+        logAction("OPTIMIZATION TIMEOUT: Complex plan restored. Try a smaller window.");
+    }, 60000); 
 
     try {
         const response = await fetch(`${API_BASE}/optimize`, { 
@@ -387,7 +464,10 @@ function initThreeCustomLayer() {
             renderer.autoClear = false;
         },
         render: function (gl, matrix) {
-            const time = Date.now() * 0.001;
+            const now = Date.now();
+            const time = now * 0.001;
+            const dt = lastRenderTime ? (now - lastRenderTime) / 1000.0 : 0.016;
+            lastRenderTime = now;
             
             // v32.9 Tactical Animations
             if (radarPulse) {
@@ -402,7 +482,31 @@ function initThreeCustomLayer() {
                 if (marker && marker.mesh) {
                     const u = marker.mesh.userData;
                     const pulse = 1 + Math.sin(time * u.pulseSpeed) * 0.1;
-                    marker.mesh.scale.set(pulse, pulse, pulse);
+                    
+                    // Do not pulse scale the realistic airplanes, just opacity
+                    if (marker.mesh.children && marker.mesh.children.length > 0) {
+                        marker.mesh.children.forEach(c => {
+                           c.material.opacity = 0.7 + (Math.sin(time * u.pulseSpeed) * 0.25);
+                        });
+                    }
+
+                    // Interpolate movement for F24-style motion
+                    if (u.velocity && u.heading !== undefined) {
+                        const speedScale = 8; // Mapping knots to visual Three.js units per sec
+                        const headingRad = -(u.heading * Math.PI / 180) + Math.PI/2;
+                        marker.mesh.position.x += Math.cos(headingRad) * u.velocity * speedScale * dt;
+                        marker.mesh.position.y += Math.sin(headingRad) * u.velocity * speedScale * dt;
+                    }
+
+                    // v38.0: Update trajectory tail if this is the selected flight
+                    if (selectedFlightId === u.flight_id && flightTrajectoryLine) {
+                        const positions = flightTrajectoryLine.geometry.attributes.position.array;
+                        // Set the destination node of the trajectory to the interpolated position
+                        positions[3] = marker.mesh.position.x;
+                        positions[4] = marker.mesh.position.y;
+                        positions[5] = marker.mesh.position.z;
+                        flightTrajectoryLine.geometry.attributes.position.needsUpdate = true;
+                    }
                 }
             });
 
@@ -419,6 +523,24 @@ function initThreeCustomLayer() {
                 .multiply(rotationZ);
 
             camera.projectionMatrix = m.multiply(l);
+
+            // v38.0: Follow Mode Logic
+            if (isFollowMode && selectedFlightId) {
+                const target = aircraftMarkers[selectedFlightId] || Object.values(aircraftMarkers).find(m => m.mesh.userData.flight_id === selectedFlightId);
+                if (target && target.mesh) {
+                    // Convert Three.js local coords back to LngLat for MapLibre
+                    // This is an approximation since we don't have the inverse transform easily
+                    // But we can use the mesh position relative to the origin
+                    const lonPos = 28.74 + (target.mesh.position.x / 83500);
+                    const latPos = 41.27 + (target.mesh.position.y / 111320);
+                    map.easeTo({
+                        center: [lonPos, latPos],
+                        duration: 0,
+                        easing: (t) => t
+                    });
+                }
+            }
+
             renderer.resetState();
             renderer.render(scene, camera);
             map.triggerRepaint();
@@ -452,20 +574,20 @@ function update3DMarkers() {
         const latOffset = (f.lat - 41.27) * 111320;
         const alt = 2500; 
 
-        const geometry = new THREE.ConeGeometry(1000, 3000, 4); 
-        const material = new THREE.MeshPhongMaterial({ 
-            color: f.assigned_delay > 0 ? 0xf43f5e : 0xa855f7, // Purple for scenario
-            transparent: true,
-            opacity: 0.8,
-            emissive: f.assigned_delay > 0 ? 0xf43f5e : 0x7e22ce,
-            emissiveIntensity: 0.6
-        });
-        const mesh = new THREE.Mesh(geometry, material);
+        const isDelayed = f.assigned_delay > 0;
+        const color = isDelayed ? 0xf43f5e : 0x0ea5e9; // Cyan for scenario prediction
+        
+        const mesh = createAirplaneMesh(color, color, 0.85);
         mesh.position.set(lonOffset, latOffset, alt);
         mesh.rotateX(Math.PI / 2);
         mesh.rotation.z = Math.PI / 4; 
         
         mesh.userData = { 
+            flight_id: f.flight_id,
+            velocity: 400 + Math.random() * 50, // Approx cruising speed
+            alt: alt,
+            heading: 45, // Default for scenario
+            status: f.assigned_delay > 0 ? "DELAYED" : "OPTIMAL",
             baseScale: 1.0, 
             pulseSpeed: 1 + Math.random() 
         };
@@ -611,14 +733,173 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchForecast();
     updateAIBriefing(); // v34.0: Initial Neural Uplink
     
+    // v35.5: WebSocket Real-Time Integration
+    const wsProto = location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${wsProto}//${location.host}/api/ws`);
+    ws.onmessage = (event) => {
+        if (event.data === "SCENARIO_UPDATED") {
+            logAction("[NET] WebSocket Push: Tactical Scenario Updated.");
+            fetchScenario();
+            fetchForecast();
+            updateEvolutionStats();
+        }
+    };
+    ws.onopen = () => logAction("[NET] WebSocket Connected: Real-time telemetry active.");
+    
+    // Keep a slow fallback heartbeat just in case
     setInterval(() => {
         fetchScenario();
         fetchForecast();
-        updateEvolutionStats();
-    }, 15000); 
+    }, 60000); 
     
     setInterval(updateEvolutionStats, 5000); // Faster polling for XP
     setInterval(updateAIBriefing, 60000);    // v34.0: 60s Cognitive Heartbeat
     
     if (window.lucide) lucide.createIcons();
+
+// --- 3D INTERACTION LOGIC (RAYCASTER) ---
+
+const tooltipDiv = document.createElement('div');
+tooltipDiv.style.position = 'absolute';
+tooltipDiv.style.background = 'rgba(15, 23, 42, 0.95)';
+tooltipDiv.style.border = '1px solid #38bdf8';
+tooltipDiv.style.padding = '10px';
+tooltipDiv.style.color = '#fff';
+tooltipDiv.style.fontSize = '11px';
+tooltipDiv.style.fontFamily = 'Inter, sans-serif';
+tooltipDiv.style.borderRadius = '6px';
+tooltipDiv.style.pointerEvents = 'none';
+tooltipDiv.style.zIndex = '1000';
+tooltipDiv.style.display = 'none';
+tooltipDiv.style.boxShadow = '0 0 15px rgba(14,165,233,0.3)';
+document.body.appendChild(tooltipDiv);
+
+document.getElementById('three-container').addEventListener('mousemove', (e) => {
+    if (!camera || !scene || viewMode !== '3D') {
+        tooltipDiv.style.display = 'none';
+        return;
+    }
+
+    const rect = e.target.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    // Unproject using MapLibre's modified camera projection
+    raycaster.setFromCamera(mouse, camera);
+
+    const meshes = Object.values(aircraftMarkers).map(m => m.mesh).filter(m => m);
+    // use recursive true to hit group children
+    const intersects = raycaster.intersectObjects(meshes, true);
+
+    if (intersects.length > 0) {
+        const top = intersects[0];
+        const u = top.object.parent.userData;
+        
+        if (Object.keys(u).length > 0) {
+            tooltipDiv.style.left = (e.clientX + 15) + 'px';
+            tooltipDiv.style.top = (e.clientY + 15) + 'px';
+            tooltipDiv.innerHTML = `
+                <strong style="color: #38bdf8; font-family: 'Orbitron'; font-size: 13px;">✈️ ${u.flight_id || 'UNKNOWN'}</strong><br/>
+                <div style="margin-top: 4px; color: #94a3b8;">
+                    SPD: <span style="color:#e2e8f0; font-weight:bold;">${Math.round(u.velocity)} kts</span><br/>
+                    ALT: <span style="color:#e2e8f0; font-weight:bold;">${u.alt} ft</span><br/>
+                    STATUS: <span style="color:${u.status === 'DELAYED' ? '#f43f5e' : '#10b981'}; font-weight:bold;">${u.status}</span><br/>
+                    <span style="color:#38bdf8; font-size:9px; margin-top:4px; display:block;">[CLICK TO LOCK RADAR]</span>
+                </div>
+            `;
+            tooltipDiv.style.display = 'block';
+            document.body.style.cursor = 'crosshair';
+        }
+    } else {
+        tooltipDiv.style.display = 'none';
+        document.body.style.cursor = 'default';
+    }
+});
+
+// v38.0: Click Interaction for Detail Panel & Trajectory
+document.getElementById('three-container').addEventListener('click', (e) => {
+    if (!camera || !scene || viewMode !== '3D') return;
+
+    const rect = e.target.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const meshes = Object.values(aircraftMarkers).map(m => m.mesh).filter(m => m);
+    const intersects = raycaster.intersectObjects(meshes, true);
+
+    if (intersects.length > 0) {
+        const top = intersects[0];
+        // v38.0: Trace up to find the group containing userData
+        let obj = top.object;
+        while (obj && !obj.userData.flight_id && obj.parent) {
+            obj = obj.parent;
+        }
+        
+        const u = obj ? obj.userData : null;
+        if (u && u.flight_id) {
+            selectedFlightId = u.flight_id;
+            
+            // Populate Panel
+            document.getElementById('dtl-callsign').innerText = u.flight_id;
+            document.getElementById('dtl-speed').innerHTML = `<span style="color:#38bdf8;">${Math.round(u.velocity)}</span> kts`;
+            document.getElementById('dtl-alt').innerHTML = `<span style="color:#38bdf8;">${u.alt}</span> ft`;
+            document.getElementById('dtl-heading').innerHTML = `<span style="color:#38bdf8;">${u.heading}</span>°`;
+            document.getElementById('dtl-status').innerText = u.status;
+            document.getElementById('dtl-status').style.color = u.status === 'DELAYED' ? '#f43f5e' : '#10b981';
+
+            // Resolve Origin/Dest and other metadata
+            const fleetInfo = fleetData.find(f => f.flight_id === u.flight_id);
+            if (fleetInfo) {
+                document.getElementById('dtl-origin-dest').innerText = `${fleetInfo.origin} ➔ ${fleetInfo.destination}`;
+                document.getElementById('dtl-lf').innerText = `${(fleetInfo.load_factor * 100).toFixed(0)}%`;
+                document.getElementById('dtl-cert').innerText = fleetInfo.ac_cat || fleetInfo.ac_type || "Commercial";
+            } else {
+                document.getElementById('dtl-origin-dest').innerText = `LIVE RADAR ➔ UNKNOWN`;
+            }
+
+            document.getElementById('flight-detail-panel').classList.remove('hidden');
+
+            // --- Advanced Trajectory Logic ---
+            if (flightTrajectoryLine) scene.remove(flightTrajectoryLine);
+            
+            const points = [];
+            const originColor = 0x10b981; // Green for path
+            
+            if (fleetInfo && fleetInfo.origin_lat) {
+                // v38.0 Path Architecture: Origin -> Plane -> Destination
+                const oX = (fleetInfo.origin_lon - 28.74) * 83500;
+                const oY = (fleetInfo.origin_lat - 41.27) * 111320;
+                const dX = (fleetInfo.dest_lon - 28.74) * 83500;
+                const dY = (fleetInfo.dest_lat - 41.27) * 111320;
+
+                points.push(new THREE.Vector3(oX, oY, 0));      // Airport Origin
+                points.push(new THREE.Vector3(obj.position.x, obj.position.y, obj.position.z)); // Plane
+                points.push(new THREE.Vector3(dX, dY, 0));      // Airport Dest
+            } else {
+                // Fallback Trail for live flights without scenario data
+                const trailLength = 500000;
+                const headingRad = -(u.heading * Math.PI / 180) + Math.PI/2;
+                const startX = obj.position.x - Math.cos(headingRad) * trailLength;
+                const startY = obj.position.y - Math.sin(headingRad) * trailLength;
+                points.push(new THREE.Vector3(startX, startY, u.alt));
+                points.push(new THREE.Vector3(obj.position.x, obj.position.y, u.alt));
+            }
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ 
+                color: originColor, 
+                linewidth: 2, 
+                transparent: true, 
+                opacity: 0.6 
+            });
+            flightTrajectoryLine = new THREE.Line(geometry, material);
+            scene.add(flightTrajectoryLine);
+            
+            logAction(`[RADAR] Focused on ${u.flight_id}. Path Analysis Locked.`);
+        }
+    } else {
+        closeFlightPanel();
+    }
+});
 });

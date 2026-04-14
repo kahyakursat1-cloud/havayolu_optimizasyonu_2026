@@ -27,7 +27,26 @@
         .briefing-card { margin-top: 1.5rem; margin-bottom: 2rem; animation: fadeIn 0.8s ease-out; }
         .briefing-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; font-size: 0.65rem; color: #64748b; font-weight: bold; text-transform: uppercase; }
         .neural-pulse { width: 8px; height: 8px; background: #a855f7; border-radius: 50%; box-shadow: 0 0 10px #a855f7; animation: pulse-glow 2s infinite; }
-        .briefing-body { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.1); border-radius: 0.5rem; padding: 0.75rem; min-height: 80px; font-size: 0.65rem; line-height: 1.6; color: #e2e8f0; font-family: 'Inter', sans-serif; position: relative; overflow: hidden; }
+        .briefing-body { 
+            background: rgba(10, 10, 20, 0.9); 
+            border: 1px solid rgba(168, 85, 247, 0.2); 
+            border-radius: 0.5rem; 
+            padding: 0.75rem; 
+            min-height: 80px; 
+            max-height: 250px; 
+            font-size: 0.65rem; 
+            line-height: 1.6; 
+            color: #e2e8f0; 
+            font-family: 'Inter', sans-serif; 
+            position: relative; 
+            overflow-y: auto; 
+            scrollbar-width: thin; 
+            scrollbar-color: rgba(168, 85, 247, 0.5) transparent;
+        }
+        .briefing-body::-webkit-scrollbar { width: 4px; }
+        .briefing-body::-webkit-scrollbar-track { background: transparent; }
+        .briefing-body::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.3); border-radius: 10px; }
+        .briefing-body::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.5); }
         .briefing-body::after { content: ''; display: inline-block; width: 4px; height: 10px; background: #a855f7; margin-left: 2px; animation: cursor-blink 1s infinite; vertical-align: middle; }
         @keyframes pulse-glow { 0% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.4); opacity: 1; } 100% { transform: scale(1); opacity: 0.5; } }
         @keyframes cursor-blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
@@ -261,6 +280,67 @@
         </section>
     </main>
 
-    <script src="script.js?v=17.0.1"></script>
+    <!-- v38.0: FlightRadar24 Style Selected Flight Panel -->
+    <div id="flight-detail-panel" class="hidden" style="position: absolute; right: 20px; top: 90px; width: 340px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; z-index: 9999; box-shadow: 0 10px 40px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif;">
+        
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56,189,248,0.2); padding: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="plane-takeoff" style="color:#38bdf8; width: 24px; height: 24px;"></i>
+                <div style="display: flex; flex-direction: column;">
+                    <span id="dtl-callsign" style="color: #f1f5f9; font-size: 20px; font-weight: bold; font-family: 'Orbitron';">TK1905</span>
+                    <span id="dtl-origin-dest" style="color: #94a3b8; font-size: 11px;">ISTANBUL (IST) ➔ UNKNOWN</span>
+                </div>
+            </div>
+            <button onclick="closeFlightPanel()" style="background:none; border:none; color:#64748b; cursor:pointer;" onmouseover="this.style.color='#f8fafc'" onmouseout="this.style.color='#64748b'">
+                <i data-lucide="x" style="width:20px; height:20px;"></i>
+            </button>
+        </div>
+
+        <!-- Metric Grid -->
+        <div style="padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <!-- Speed -->
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                <span style="color:#64748b; font-size:10px; display:block; margin-bottom:4px;">AIRSPEED</span>
+                <span id="dtl-speed" style="color:#e2e8f0; font-size:16px; font-weight:600;"><span style="color:#38bdf8;">--</span> kts</span>
+            </div>
+            <!-- Altitude -->
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                <span style="color:#64748b; font-size:10px; display:block; margin-bottom:4px;">ALTITUDE</span>
+                <span id="dtl-alt" style="color:#e2e8f0; font-size:16px; font-weight:600;"><span style="color:#38bdf8;">--</span> ft</span>
+            </div>
+            <!-- Heading -->
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                <span style="color:#64748b; font-size:10px; display:block; margin-bottom:4px;">HEADING</span>
+                <span id="dtl-heading" style="color:#e2e8f0; font-size:16px; font-weight:600;"><span style="color:#38bdf8;">--</span>°</span>
+            </div>
+            <!-- Status -->
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                <span style="color:#64748b; font-size:10px; display:block; margin-bottom:4px;">STATUS</span>
+                <span id="dtl-status" style="color:#10b981; font-size:14px; font-weight:bold;">OPTIMAL</span>
+            </div>
+            <!-- Load Factor -->
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                <span style="color:#64748b; font-size:10px; display:block; margin-bottom:4px;">LOAD FACTOR</span>
+                <span id="dtl-lf" style="color:#e2e8f0; font-size:16px; font-weight:600;">--%</span>
+            </div>
+            <!-- Aircraft Type -->
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                <span style="color:#64748b; font-size:10px; display:block; margin-bottom:4px;">CERTIFICATION</span>
+                <span id="dtl-cert" style="color:#e2e8f0; font-size:16px; font-weight:600;">--</span>
+            </div>
+        </div>
+
+        <div style="padding: 16px; padding-top:0; display:flex; gap:10px;">
+            <button id="btn-follow" onclick="toggleFollowMode()" class="foresight-btn orbitron" style="flex:1; font-size:0.6rem; padding: 10px;">
+                LOCK CAMERA
+            </button>
+            <div style="flex:1.5; background: rgba(14, 165, 233, 0.1); border-left: 3px solid #0ea5e9; padding: 8px; color: #cbd5e1; font-size:10px; display:flex; align-items:center;">
+                Trajectory locked. Interpolating flight vectors.
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=35.9"></script>
 </body>
 </html>

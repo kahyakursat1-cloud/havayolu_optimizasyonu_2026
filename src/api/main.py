@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import pandas as pd
@@ -7,7 +7,7 @@ import os
 import sys
 import logging
 import httpx
-
+from sqlalchemy import create_engine, event, text
 # Configure v18.3 Industrial Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("AviationSingularity")
@@ -29,30 +29,114 @@ import asyncio
 
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Aviation Singularity Enterprise API")
+from contextlib import asynccontextmanager
 
-# Enable CORS for local development
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(brain_evolution_loop())
+    yield
+
+app = FastAPI(title="Aviation Singularity Enterprise API", lifespan=lifespan)
+
+# SQLite with WAL journal mode for concurrent read/write performance
+engine = create_engine(
+    'sqlite:///aviation.db',
+    echo=False,
+    connect_args={"check_same_thread": False},
+)
+
+@event.listens_for(engine, "connect")
+def _set_sqlite_pragmas(dbapi_conn, _record):
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")   # concurrent readers don't block writers
+    cursor.execute("PRAGMA synchronous=NORMAL")  # safe + faster than FULL
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+# v38.0: Strategic Geographic Registry
+AIRPORTS = {
+    'IST': {'lat': 41.275, 'lon': 28.751, 'name': 'Istanbul Airport'},
+    'ESB': {'lat': 40.128, 'lon': 32.995, 'name': 'Ankara Esenboğa'},
+    'ADB': {'lat': 38.292, 'lon': 27.156, 'name': 'Izmir Adnan Menderes'},
+    'AYT': {'lat': 36.898, 'lon': 30.800, 'name': 'Antalya Airport'},
+    'LHR': {'lat': 51.470, 'lon': -0.454, 'name': 'London Heathrow'},
+    'JFK': {'lat': 40.641, 'lon': -73.778, 'name': 'New York JFK'}
+}
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except Exception:
+                pass
+
+manager = ConnectionManager()
+
+# CORS: restrict to explicitly allowed origins via environment variable.
+# Set ALLOWED_ORIGINS="http://localhost:8501,https://yourdomain.com" in production.
+# Falls back to localhost only when the variable is unset.
+_raw_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8501,http://127.0.0.1:8501")
+ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Global State (Mocking a database/session)
 class AppState:
     def __init__(self):
-        self.sim = AdvancedAirlineSimulator()
-        self.df = self.sim.generate_full_scenario(days=1)
         self.ot_monitor = OTSecurityMonitor()
         self.causal = BayesianCausalModel()
         self.kpi_engine = AviationKPIEngine()
         self.data_sync = ExternalDataConnector()
-        # v18.3: Centralized Solver for full scope access
+        self._load_or_generate()
         self.solver = DigitalTwinSolver(self.df)
 
+    def _load_or_generate(self):
+        try:
+            self.df = pd.read_sql('flights', engine)
+            self.df['departure_time'] = pd.to_datetime(self.df['departure_time'])
+            self.df['arrival_time'] = pd.to_datetime(self.df['arrival_time'])
+            logger.info("📦 DB Loaded: Operational state retrieved from aviation.db")
+        except Exception:
+            logger.info("Initializing fresh scenario...")
+            from src.generator.synthetic_env import AdvancedAirlineSimulator
+            self.sim = AdvancedAirlineSimulator()
+            self.df = self.sim.generate_full_scenario(days=1)
+            self.save()
+
+    def save(self):
+        try:
+            self.df.to_sql('flights', engine, if_exists='replace', index=False)
+            # Notify connected clients about State changes
+        except Exception as e:
+            logger.warning(f"DB Save Error: {e}")
+
 state = AppState()
+
+@app.websocket("/api/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 # v22.0: Background Evolution Task (Every 15 Minutes)
 async def brain_evolution_loop():
@@ -62,15 +146,29 @@ async def brain_evolution_loop():
         if success:
             logger.info("🧠 NEURAL EVOLUTION: Policy improved based on real-world trajectories.")
 
-@app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(brain_evolution_loop())
+# Lifespan task created via asynccontextmanager (v18.4 Fix)
 
 @app.get("/api/scenario")
 async def get_scenario():
-    # Fix: Pandas Timestamps must be converted to ISO format for JSON compatibility
-    data_json = state.df.to_json(orient='records', date_format='iso')
+    # v38.0: Enrich Scenario with Geographic Context
+    df_copy = state.df.copy()
+    
+    # Inject O&D Coordinates for Tactical Visualization
+    df_copy['origin_lat'] = df_copy['origin'].map(lambda x: AIRPORTS.get(x, {}).get('lat'))
+    df_copy['origin_lon'] = df_copy['origin'].map(lambda x: AIRPORTS.get(x, {}).get('lon'))
+    df_copy['dest_lat'] = df_copy['destination'].map(lambda x: AIRPORTS.get(x, {}).get('lat'))
+    df_copy['dest_lon'] = df_copy['destination'].map(lambda x: AIRPORTS.get(x, {}).get('lon'))
+    
+    # v38.1: Provide current positional estimates for the 3D Engine
+    df_copy['lat'] = df_copy['origin_lat']
+    df_copy['lon'] = df_copy['origin_lon']
+    
+    data_json = df_copy.to_json(orient='records', date_format='iso')
     return json.loads(data_json)
+
+@app.get("/api/airports")
+async def get_airports():
+    return AIRPORTS
 
 @app.get("/api/analytics/kpi")
 async def get_kpis():
@@ -79,58 +177,72 @@ async def get_kpis():
 @app.get("/api/sync/live-traffic")
 async def get_live_traffic():
     """
-    v21.2 Live Skies: Fetch real-time ADS-B flight data for Istanbul (IST) area.
+    v35.4 Resilient Radar: Fetch real-time ADS-B with Synthetic Fallback.
     """
     # IST Bounding Box (Lat/Lon)
-    params = {
-        "lamin": 39.0,
-        "lamax": 43.5,
-        "lomin": 24.5,
-        "lomax": 32.5
-    }
+    params = {"lamin": 39.0, "lamax": 43.5, "lomin": 24.5, "lomax": 32.5}
     url = "https://opensky-network.org/api/states/all"
     
     async with httpx.AsyncClient() as client:
         try:
-            # Use a slightly wider timeout for reliability
-            response = await client.get(url, params=params, timeout=12)
+            # v35.4: Reduced timeout to fail fast and trigger fallback
+            response = await client.get(url, params=params, timeout=8)
             if response.status_code == 200:
                 data = response.json()
                 states = data.get("states", [])
                 flights = []
                 for s in (states or []):
+                    if s[5] is None or s[6] is None: continue # Skip invalid position
                     raw_flight = {
                         "flight_id": s[1].strip() if s[1] else s[0],
                         "lat": s[6],
                         "lon": s[5],
-                        "alt": s[7] or 0,
+                        "alt": s[7] or 3000,
                         "on_ground": s[8],
-                        "velocity": s[9] or 0,
+                        "velocity": s[9] or 250,
                         "heading": s[10] or 0
                     }
                     
-                    # v22.0: Neural Inference (Route & Cause Analysis)
+                    # v22.0: Neural Inference
                     intel = evolution_engine.infer_flight_meta(raw_flight, None, len(states))
                     raw_flight.update(intel)
-                    
                     flights.append(raw_flight)
-                return {"active_flights": flights, "count": len(flights), "source": "OpenSky + Intel Engine"}
-            return {"active_flights": [], "count": 0, "status": "api_busy"}
+                
+                logger.info(f"OpenSky Sync: {len(flights)} aircraft ingested.")
+                return {"active_flights": flights, "count": len(flights), "source": "OpenSky Live"}
         except Exception as e:
-            logger.error(f"OpenSky Connector Failure: {str(e)}")
-            return {"active_flights": [], "count": 0, "error": "Connection timed out"}
+            logger.warning(f"OpenSky Node Offline: {str(e)}. Engaging Synthetic Radar System...")
+
+    # v35.4 Fallback: Generate Realistic Synthetic Traffic for IST Hub
+    import random
+    sync_flights = []
+    for i in range(25):
+        raw_flight = {
+            "flight_id": f"S-{random.randint(100, 999)}",
+            "lat": 41.27 + random.uniform(-1.5, 1.5),
+            "lon": 28.74 + random.uniform(-2.0, 2.0),
+            "alt": random.randint(2000, 10000),
+            "on_ground": False,
+            "velocity": random.randint(200, 450),
+            "heading": random.randint(0, 359)
+        }
+        intel = evolution_engine.infer_flight_meta(raw_flight, None, 25)
+        raw_flight.update(intel)
+        sync_flights.append(raw_flight)
+    
+    return {
+        "active_flights": sync_flights, 
+        "count": len(sync_flights), 
+        "source": "Synthetic Radar (Fallback Active)",
+        "offline": True
+    }
 
 @app.get("/api/evolution/summary")
 async def get_evolution_summary():
     """
-    v22.0 Brain Stats: Report online learning progress.
+    v23.0 Brain Stats: Report online learning progress.
     """
-    return {
-        "status": "Learning Active",
-        "evolution_cycles": evolution_engine.evolution_count,
-        "experience_points": len(evolution_engine.experience_buffer),
-        "model_version": "Shikra-v1.x-Dynamic"
-    }
+    return evolution_engine.get_stats()
 
 class EvidenceData(BaseModel):
     observation: list
@@ -217,10 +329,15 @@ async def ai_optimize():
     using the trained Reinforcement Learning agent.
     """
     try:
-        # v18.3 Fix: Use state.solver
-        result = state.solver.solve_with_windows(max_time_per_window=3)
+        # v18.3 Fix: Use state.solver non-blocking
+        def _run_ai_solve():
+            return state.solver.solve_with_windows(max_time_per_window=3)
+        
+        result = await asyncio.to_thread(_run_ai_solve)
         if result is not None:
              state.df = result
+             state.save()
+             await manager.broadcast("SCENARIO_UPDATED")
         return {
             "status": "success",
             "agent": "Neural Commander v1 (PPO)",
@@ -242,13 +359,17 @@ async def sync_live():
 async def optimize(window_size: int = 6):
     try:
         logger.info(f"⚡ [v17.1] Re-Optimization Triggered. Window Size: {window_size}h")
-        solver = DigitalTwinSolver(state.df)
         
-        # v17.1: We set a total safeguard timeout to ensure the API responds within 45s
-        result = solver.solve_with_windows(window_size_hrs=window_size, max_time_per_window=5)
+        def _run_solve():
+            solver = DigitalTwinSolver(state.df)
+            return solver.solve_with_windows(window_size_hrs=4, max_time_per_window=3)
+            
+        result = await asyncio.to_thread(_run_solve)
         
         if result is not None:
             state.df = result
+            state.save()
+            await manager.broadcast("SCENARIO_UPDATED")
             logger.info("✅ Optimization Success.")
             return {"status": "success", "message": f"Optimization complete for {len(result)} legs."}
         else:
@@ -262,15 +383,26 @@ async def optimize(window_size: int = 6):
 
 @app.post("/api/stress-test")
 async def stress_test(hub: str = 'IST'):
-    # 1. Trigger Disruption
-    state.df = state.sim.trigger_disruption(state.df, hub=hub)
-    # 2. Run Reactive Recovery
-    solver = DigitalTwinSolver(state.df)
-    result = solver.solve_disruption(f"Mass Delay at {hub}")
-    if result is not None:
-        state.df = result
-        return {"status": "success", "message": f"Shock recovery completed for {hub}"}
-    raise HTTPException(status_code=500, detail="Recovery failed")
+    try:
+        # 1. Trigger Disruption
+        from src.generator.synthetic_env import AdvancedAirlineSimulator
+        sim = AdvancedAirlineSimulator()
+        state.df = sim.trigger_disruption(state.df, hub=hub)
+        
+        # 2. Run Reactive Recovery Non-Blocking
+        def _run_shock():
+            solver = DigitalTwinSolver(state.df)
+            return solver.solve_disruption(f"Mass Delay at {hub}")
+            
+        result = await asyncio.to_thread(_run_shock)
+        if result is not None:
+            state.df = result
+            state.save()
+            await manager.broadcast("SCENARIO_UPDATED")
+            return {"status": "success", "message": f"Shock recovery completed for {hub}"}
+        raise HTTPException(status_code=500, detail="Recovery failed")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Serve Static Files for v14.0 Frontend
 web_dir = os.path.join(os.path.dirname(__file__), '../web')
