@@ -3,6 +3,7 @@ import numpy as np
 from ortools.sat.python import cp_model
 import logging
 import time
+from src.analytics.fatigue_engine import fatigue_engine
 
 # Professional Logging Configuration
 logger = logging.getLogger(__name__)
@@ -118,6 +119,18 @@ class DigitalTwinSolver:
         delay_penalty = []
         carbon_penalty = []
         corsia_tax = [] 
+        fatigue_penalties = [] # v23.0 Bio-Mathematical Penalty
+        
+        for f in F:
+            active = (1 - z[f])
+            
+            # v23.0 Fatigue Analysis
+            f_time = self.flights.loc[f, 'departure_time']
+            f_block = int(self.flights.loc[f, 'block_time'])
+            f_risk = fatigue_engine.calculate_duty_fatigue(f_time, f_block)
+            # Soft Penalty: Each 0.1 fatigue index = 5000 TL penalty
+            # This allows the solver to fly high-fatigue legs if profit is extreme (e.g. trans-Atlantic)
+            fatigue_penalties.append(active * int(f_risk * 50000))
 
         for f in F:
             active = (1 - z[f])
@@ -143,6 +156,7 @@ class DigitalTwinSolver:
             model.Maximize(
                 sum(revenue) - sum(op_costs) - sum(fuel_costs) 
                 - sum(delay_penalty) - sum(carbon_penalty) - sum(corsia_tax)
+                - sum(fatigue_penalties)
             )
         else: # VOLUME Strategy
             # Prioritize Load Factor and Connectivity over margin

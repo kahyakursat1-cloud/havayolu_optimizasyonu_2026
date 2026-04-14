@@ -11,7 +11,7 @@ import httpx
 import time
 from sqlalchemy import create_engine, event, text
 
-# Configure v22.0 Visionary Logging
+# Configure v23.0 Aero-Ecosystem Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("AviationSingularity")
 
@@ -28,6 +28,7 @@ from src.data_connectors.market_intel import market_intel
 from src.analytics.xai_engine import shikra_xai
 from src.security.adversarial_guard import security_guard
 from src.optimizer.hybrid_ga import QuantumInspiredGA
+from src.analytics.fatigue_engine import fatigue_engine
 import asyncio
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,7 +39,7 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(brain_evolution_loop())
     yield
 
-app = FastAPI(title="Aviation Singularity - Visionary API v22.0", lifespan=lifespan)
+app = FastAPI(title="Aviation Singularity - Aero-Ecosystem API v23.0", lifespan=lifespan)
 
 # SQLite with WAL journal mode
 engine = create_engine(
@@ -89,6 +90,10 @@ app.add_middleware(
 class AppState:
     def __init__(self):
         self.kpi_engine = AviationKPIEngine()
+        self.slot_ledger = [
+            {"id": "BL-001", "time": "2026-06-01 10:00", "p1": "AC_001", "p2": "AC_042", "asset": "Slot IST-1400", "price": "500 CR"},
+            {"id": "BL-002", "time": "2026-06-01 10:15", "p1": "AC_005", "p2": "AC_012", "asset": "Slot ESB-1130", "price": "320 CR"}
+        ]
         self._load_or_generate()
 
     def _load_or_generate(self):
@@ -118,24 +123,63 @@ async def get_scenario():
     data_json = df_copy.to_json(orient='records', date_format='iso')
     return json.loads(data_json)
 
+@app.get("/api/intermodal/recommendations")
+async def get_intermodal_recommendations():
+    """
+    v23.0 Intermodal Sync: Recommend HSR (Train) alternatives for canceled flights.
+    """
+    canceled = state.df[state.df['is_canceled'] == 1]
+    recommendations = []
+    
+    for _, row in canceled.iterrows():
+        # Check if IST-ESB or IST-ADB corridor
+        if (row['origin'] == 'IST' and row['destination'] == 'ESB') or (row['origin'] == 'ESB' and row['destination'] == 'IST'):
+             recommendations.append({
+                 "flight_id": row['flight_id'],
+                 "mode": "HSR (High Speed Rail)",
+                 "provider": "TCDD-Vision",
+                 "departure": row['departure_time'].isoformat(),
+                 "duration_mins": 210,
+                 "seats_available": 45,
+                 "co2_saving": row['co2_kg']
+             })
+             
+    return recommendations
+
+@app.get("/api/blockchain/slot-ledger")
+async def get_slot_ledger():
+    """
+    v23.0 Decentralized Slot Market: Returns the simulated blockchain ledger.
+    """
+    return state.slot_ledger
+
 @app.post("/api/optimizer/solve")
 async def optimize(strategy: str = "PROFIT"):
-    """
-    v22.0 Strategic Solve: User-selected strategy (PROFIT vs VOLUME).
-    """
     try:
-        # 1. Security Pre-gate
+        # Pre-gate
         validation = security_guard.validate_tactical_data(state.df)
         if not validation['is_safe']:
-             logger.warning("🚨 SECURITY ALERT: Adversarial Injection Blocked. Sanitizing...")
              state.df = security_guard.sanitize_scenario(state.df)
         
-        # 2. Optimization
+        # Optimization
         def _run_solve():
             solver = DigitalTwinSolver(state.df)
             return solver.solve_with_windows(strategy=strategy)
             
         state.df = await asyncio.to_thread(_run_solve)
+        
+        # Simulate a Blockchain Slot Swap during solve for visual demo
+        import random
+        new_trade = {
+            "id": f"BL-{random.randint(100,999)}",
+            "time": pd.Timestamp.now().isoformat(),
+            "p1": f"AC_{random.randint(1,50):03d}",
+            "p2": f"AC_{random.randint(1,50):03d}",
+            "asset": f"Slot {random.choice(['IST','ESB','ADB'])}-{random.randint(10,22)}00",
+            "price": f"{random.randint(100,800)} CR"
+        }
+        state.slot_ledger.insert(0, new_trade)
+        
         state.save()
         await manager.broadcast("SCENARIO_UPDATED")
         return {"status": "success", "strategy": strategy, "security": validation}
@@ -143,43 +187,12 @@ async def optimize(strategy: str = "PROFIT"):
         logger.error(f"Solve Error: {str(e)}")
         return {"status": "error", "message": str(e)}
 
-@app.get("/api/optimizer/race")
-async def optimizer_race():
-    """
-    v22.0 Race Mode: CP-SAT (MIP) vs QIO (Quantum-Inspired).
-    """
-    # 1. CP-SAT Run
-    t0 = time.time()
-    def _run_cpsat():
-        solver = DigitalTwinSolver(state.df)
-        return solver.solve_winning(strategy="PROFIT", max_time_sec=10)
-    await asyncio.to_thread(_run_cpsat)
-    t_cpsat = time.time() - t0
-    
-    # 2. QIO Run
-    qio = QuantumInspiredGA(state.df, pop_size=10, generations=5)
-    _, t_qio = await asyncio.to_thread(qio.solve)
-    
-    return {
-        "results": {
-            "cp_sat": {"time": t_cpsat, "label": "Deterministic Accuracy"},
-            "qio_quantum": {"time": t_qio, "label": "Quantum-Inspired Interference"}
-        },
-        "winner": "QIO" if t_qio < t_cpsat else "CP-SAT"
-    }
-
-@app.post("/api/security/attack")
-async def trigger_attack():
-    """
-    v22.0 Red-Team Probe: Injecting fake astronomical delays.
-    """
-    indices = state.df.index[:3]
-    state.df.loc[indices, 'assigned_delay'] = 720 # 12 Hours
-    return {"status": "ATTACK_TRIGGERED", "details": "Critical delays injected to test Adversarial Guard."}
-
 @app.get("/api/analytics/kpi")
 async def get_kpis():
-    return state.kpi_engine.calculate_fleet_kpis(state.df)
+    kpis = state.kpi_engine.calculate_fleet_kpis(state.df)
+    # v23.0: Add Biological Risk Index (Fatigue)
+    kpis["fleet_biological_fatigue"] = round(state.df.get('fatigue_score', pd.Series([0])).mean(), 2)
+    return kpis
 
 # Background Tasks
 async def brain_evolution_loop():
