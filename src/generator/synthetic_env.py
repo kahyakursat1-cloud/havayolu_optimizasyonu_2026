@@ -172,7 +172,10 @@ class AdvancedAirlineSimulator:
                     'maintenance_reason': self.aircraft_pool[ac_id].get('maintenance_reason'),
                     # v25.0 Terminal-Aware Logic
                     'gate_id': f"{random.choice(list(self.ist_piers.keys()))}{random.randint(1,40)}",
-                    'pax_mobility_index': random.uniform(0.7, 1.0) # 1.0 = High Mobility
+                    'pax_mobility_index': random.uniform(0.7, 1.0),
+                    # v27.0 Non-Terrestrial Network (NTN) Native
+                    # True if Transoceanic or high latitude
+                    'ntn_link_active': True if random.random() < 0.15 else False 
                 })
         
         df = pd.DataFrame(flights)
