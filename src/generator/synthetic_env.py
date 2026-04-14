@@ -32,7 +32,9 @@ class AdvancedAirlineSimulator:
             f"AC_{i:03d}": {
                 'type': random.choice(list(self.aircraft_specs.keys())),
                 'remaining_fh': random.randint(15, 60),
-                'maintenance_station': 'IST'
+                'maintenance_station': 'IST',
+                'engine_health': random.uniform(0.15, 1.0),
+                'maintenance_reason': None
             } for i in range(50)
         }
         # Add Intermodal Train Fleet
@@ -40,7 +42,9 @@ class AdvancedAirlineSimulator:
             f"HSR_{i:02d}": {
                 'type': 'HSR-Train',
                 'remaining_fh': 1000,
-                'maintenance_station': 'IST'
+                'maintenance_station': 'IST',
+                'engine_health': 1.0,
+                'maintenance_reason': None
             } for i in range(5)
         })
         self.crew_pool = {
@@ -158,7 +162,9 @@ class AdvancedAirlineSimulator:
                     'op_cost_tl': self.aircraft_specs[ac_type]['op_cost'],
                     'delay_cost_per_min': 800 if destination in ['IST', 'LHR', 'JFK'] else 500,
                     'market_qsi_weight': random.uniform(0.8, 1.3) if is_night == 0 else random.uniform(0.5, 0.9), # Night flights have lower preference
-                    'saf_usage': 0.0
+                    'saf_usage': 0.0,
+                    'engine_health': self.aircraft_pool[ac_id]['engine_health'],
+                    'maintenance_reason': self.aircraft_pool[ac_id].get('maintenance_reason')
                 })
         
         df = pd.DataFrame(flights)

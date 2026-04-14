@@ -84,5 +84,33 @@ class CognitiveNarrator:
         except Exception as e:
             return f"What-If Analysis Error: {str(e)}"
 
+    def generate_crew_directives(self, flight_data):
+        """
+        v24.0 Human-Centeric AI: Converts raw flight outcomes into mission-critical 
+        directives for personnel.
+        """
+        if not self.is_ready or not self.llm:
+            return "Cognitive Narrative Offline: Manual Ops Required."
+
+        prompt = f"<start_of_turn>user\n" \
+                 f"Operasyonel Veriler (Json): {flight_data[:800]}\n\n" \
+                 f"Görevin: Bu optimizasyon sonuçlarını sahadaki ekipler (mürettebat, yer hizmetleri) " \
+                 f"için kısa, net ve otoriter 'Operasyonel Direktiflere' dönüştür. " \
+                 f"Karmaşık verileri sil, sadece aksiyon odaklı talimatlar ver. " \
+                 f"Örn: 'Crew 14: Gate 4'e intikal edin.' Sadece Türkçe konuş.\n<end_of_turn>\n" \
+                 f"<start_of_turn>model\n"
+
+        try:
+            output = self.llm(
+                prompt,
+                max_tokens=612,
+                temperature=0.3, # Low temp for precision instructions
+                stop=["<end_of_turn>"],
+                echo=False
+            )
+            return output['choices'][0]['text'].strip()
+        except Exception as e:
+            return f"Directive Generation Error: {str(e)}"
+
 # Singleton Instance for Global Access
 narrator = CognitiveNarrator()

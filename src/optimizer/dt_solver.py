@@ -22,12 +22,27 @@ class DigitalTwinSolver:
             ac_schedules[a] = ac_df
 
         eligible = {}
+        grounding_reasons = {}
+
         for f in F:
             dep = self.flights.loc[f, 'departure_time']
             origin = self.flights.loc[f, 'origin']
             eligible[f] = []
 
             for a in A:
+                # v24.0 MRO Check: Industrial Reliability
+                # Fetch engine health from the first flight this aircraft is assigned to in this batch
+                ac_data = self.flights[self.flights['aircraft_id'] == a].iloc[0]
+                health = ac_data.get('engine_health', 1.0)
+                maint_reason = ac_data.get('maintenance_reason')
+
+                if health < 0.2:
+                    grounding_reasons[a] = f"Engine Health Critical ({health:.2f})"
+                    continue
+                if maint_reason:
+                    grounding_reasons[a] = f"Pending Maintenance: {maint_reason}"
+                    continue
+
                 sched = ac_schedules[a]
                 prior = sched[sched['departure_time'] < dep]
                 if prior.empty:
@@ -38,8 +53,14 @@ class DigitalTwinSolver:
                         eligible[f].append(a)
 
             if not eligible[f]:
-                eligible[f] = list(A)
-        return eligible
+                # If no aircraft is eligible, it must be canceled
+                pass
+                
+        # Report groundings to logger for operator visibility
+        for ac, reason in grounding_reasons.items():
+            logger.warning(f"⚠️ AIRCRAFT GROUNDED: {ac} | Reason: {reason}")
+            
+        return eligible, grounding_reasons
 
     def solve_winning(self, strategy: str = "PROFIT", max_time_sec=60):
         """
@@ -53,9 +74,10 @@ class DigitalTwinSolver:
         K = self.flights['crew_id'].unique().tolist()
 
         if len(self.flights) > 150:
-            eligible_aircraft = self._compute_eligible_aircraft(F, A)
+            eligible_aircraft, grounding_reasons = self._compute_eligible_aircraft(F, A)
         else:
-            eligible_aircraft = {f: list(A) for f in F}
+            # Still run MRO check even for small batches
+            eligible_aircraft, grounding_reasons = self._compute_eligible_aircraft(F, A)
 
         model = cp_model.CpModel()
 
@@ -168,7 +190,10 @@ class DigitalTwinSolver:
         status = solver.Solve(model)
 
         if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-            return self._format_results(solver, x, y, z, d, s, t, eligible_aircraft)
+            results = self._format_results(solver, x, y, z, d, s, t, eligible_aircraft)
+            # v24.0: Attach MRO Warnings to the results object for the API
+            results.attrs['mro_warnings'] = grounding_reasons
+            return results
         return None
 
     def solve_with_windows(self, strategy: str = "PROFIT", window_size_hrs=4):

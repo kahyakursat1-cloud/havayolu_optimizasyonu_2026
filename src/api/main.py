@@ -11,7 +11,7 @@ import httpx
 import time
 from sqlalchemy import create_engine, event, text
 
-# Configure v23.0 Aero-Ecosystem Logging
+# Configure v24.0 Industrial Maturity Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("AviationSingularity")
 
@@ -29,6 +29,8 @@ from src.analytics.xai_engine import shikra_xai
 from src.security.adversarial_guard import security_guard
 from src.optimizer.hybrid_ga import QuantumInspiredGA
 from src.analytics.fatigue_engine import fatigue_engine
+from src.security.compliance_engine import compliance_engine
+from src.models.ground_agent import ground_agent
 import asyncio
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,7 +41,7 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(brain_evolution_loop())
     yield
 
-app = FastAPI(title="Aviation Singularity - Aero-Ecosystem API v23.0", lifespan=lifespan)
+app = FastAPI(title="Aviation Singularity - Industrial Maturity API v24.0", lifespan=lifespan)
 
 # SQLite with WAL journal mode
 engine = create_engine(
@@ -94,6 +96,7 @@ class AppState:
             {"id": "BL-001", "time": "2026-06-01 10:00", "p1": "AC_001", "p2": "AC_042", "asset": "Slot IST-1400", "price": "500 CR"},
             {"id": "BL-002", "time": "2026-06-01 10:15", "p1": "AC_005", "p2": "AC_012", "asset": "Slot ESB-1130", "price": "320 CR"}
         ]
+        self.last_solve_results = None
         self._load_or_generate()
 
     def _load_or_generate(self):
@@ -103,7 +106,7 @@ class AppState:
             self.df['arrival_time'] = pd.to_datetime(self.df['arrival_time'])
             logger.info("📦 DB Loaded.")
         except Exception:
-            logger.info("Initializing fresh scenario...")
+            logger.info("Initializing fresh v24.0 scenario...")
             sim = AdvancedAirlineSimulator()
             self.df = sim.generate_full_scenario(days=1)
             self.df = market_intel.enrich_scenario_with_intel(self.df)
@@ -123,52 +126,42 @@ async def get_scenario():
     data_json = df_copy.to_json(orient='records', date_format='iso')
     return json.loads(data_json)
 
-@app.get("/api/intermodal/recommendations")
-async def get_intermodal_recommendations():
-    """
-    v23.0 Intermodal Sync: Recommend HSR (Train) alternatives for canceled flights.
-    """
-    canceled = state.df[state.df['is_canceled'] == 1]
-    recommendations = []
-    
-    for _, row in canceled.iterrows():
-        # Check if IST-ESB or IST-ADB corridor
-        if (row['origin'] == 'IST' and row['destination'] == 'ESB') or (row['origin'] == 'ESB' and row['destination'] == 'IST'):
-             recommendations.append({
-                 "flight_id": row['flight_id'],
-                 "mode": "HSR (High Speed Rail)",
-                 "provider": "TCDD-Vision",
-                 "departure": row['departure_time'].isoformat(),
-                 "duration_mins": 210,
-                 "seats_available": 45,
-                 "co2_saving": row['co2_kg']
-             })
-             
-    return recommendations
-
-@app.get("/api/blockchain/slot-ledger")
-async def get_slot_ledger():
-    """
-    v23.0 Decentralized Slot Market: Returns the simulated blockchain ledger.
-    """
-    return state.slot_ledger
-
 @app.post("/api/optimizer/solve")
 async def optimize(strategy: str = "PROFIT"):
+    """
+    v24.0 Industrial Solve: Includes MRO and Antitrust Compliance Audit.
+    """
     try:
-        # Pre-gate
-        validation = security_guard.validate_tactical_data(state.df)
-        if not validation['is_safe']:
+        # 1. Security & Compliance Pre-gate
+        guard_val = security_guard.validate_tactical_data(state.df)
+        if not guard_val['is_safe']:
              state.df = security_guard.sanitize_scenario(state.df)
+             
+        # v24.0 Antitrust Warning for Managers (Instruction 2)
+        compliance_val = compliance_engine.audit_yield_decisions(state.df)
         
-        # Optimization
+        # 2. Optimization
         def _run_solve():
             solver = DigitalTwinSolver(state.df)
+            # This returns a DataFrame with .attrs['mro_warnings']
             return solver.solve_with_windows(strategy=strategy)
             
-        state.df = await asyncio.to_thread(_run_solve)
+        result_df = await asyncio.to_thread(_run_solve)
         
-        # Simulate a Blockchain Slot Swap during solve for visual demo
+        # v24.0 MRO Warning for Operators (Instruction 1)
+        mro_warnings = getattr(result_df, 'attrs', {}).get('mro_warnings', {})
+        
+        state.df = result_df
+        state.last_solve_results = result_df
+        
+        # 3. Simulate Edge-Ground Optimization for the IST Hub
+        ground_savings = []
+        for _, row in state.df.head(5).iterrows():
+            if row['origin'] == 'IST':
+                save_data = ground_agent.coordinate_turnaround(row['flight_id'], row['ac_type'], row['passenger_count'])
+                ground_savings.append(save_data)
+
+        # Update Slot Ledger
         import random
         new_trade = {
             "id": f"BL-{random.randint(100,999)}",
@@ -182,17 +175,70 @@ async def optimize(strategy: str = "PROFIT"):
         
         state.save()
         await manager.broadcast("SCENARIO_UPDATED")
-        return {"status": "success", "strategy": strategy, "security": validation}
+        
+        return {
+            "status": "success", 
+            "strategy": strategy,
+            "compliance": {
+                "status": "APPROVED" if compliance_val['is_compliant'] else "ADVISORY_ISSUED",
+                "warnings": compliance_val['violations']
+            },
+            "mro_operational_warnings": mro_warnings,
+            "ground_agent_optimization": ground_savings
+        }
     except Exception as e:
         logger.error(f"Solve Error: {str(e)}")
         return {"status": "error", "message": str(e)}
 
+@app.get("/api/ai/crew-directives")
+async def get_crew_directives():
+    """
+    v24.0 Human-AI Interaction: Generates actionable directives for flight/ground crews (Instruction 3).
+    """
+    if state.df is None or state.df.empty:
+        return {"directives": "No operational plan active."}
+    
+    # Send a slice of the plan for translation into natural language
+    plan_slice = state.df[['flight_id', 'origin', 'destination', 'assigned_delay', 'is_canceled']].head(8).to_json()
+    
+    directives = await asyncio.to_thread(narrator.generate_crew_directives, plan_slice)
+    return {
+        "directives": directives,
+        "metadata": {
+            "target": "Operational Staff",
+            "source": "Chief Pilot AI (Gemma-2B)",
+            "timestamp": pd.Timestamp.now().isoformat()
+        }
+    }
+
 @app.get("/api/analytics/kpi")
 async def get_kpis():
     kpis = state.kpi_engine.calculate_fleet_kpis(state.df)
-    # v23.0: Add Biological Risk Index (Fatigue)
     kpis["fleet_biological_fatigue"] = round(state.df.get('fatigue_score', pd.Series([0])).mean(), 2)
+    # v24.0: Add MRO Preparedness Metric
+    kpis["fleet_avg_engine_health"] = round(state.df.get('engine_health', pd.Series([1.0])).mean() * 100, 1)
     return kpis
+
+@app.get("/api/intermodal/recommendations")
+async def get_intermodal_recommendations():
+    canceled = state.df[state.df['is_canceled'] == 1]
+    recommendations = []
+    for _, row in canceled.iterrows():
+        if (row['origin'] == 'IST' and row['destination'] == 'ESB') or (row['origin'] == 'ESB' and row['destination'] == 'IST'):
+             recommendations.append({
+                 "flight_id": row['flight_id'],
+                 "mode": "HSR (High Speed Rail)",
+                 "provider": "TCDD-Vision",
+                 "departure": row['departure_time'].isoformat(),
+                 "duration_mins": 210,
+                 "seats_available": 45,
+                 "co2_saving": row['co2_kg']
+             })
+    return recommendations
+
+@app.get("/api/blockchain/slot-ledger")
+async def get_slot_ledger():
+    return state.slot_ledger
 
 # Background Tasks
 async def brain_evolution_loop():
