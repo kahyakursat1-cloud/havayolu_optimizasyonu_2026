@@ -21,7 +21,11 @@ class AdvancedAirlineSimulator:
             'B737': {'range': 5000, 'fuel': 15, 'capacity': 180, 'op_cost': 5000, 'cat': 'Narrow', 'co2': 3.1},
             'A320': {'range': 6000, 'fuel': 14, 'capacity': 160, 'op_cost': 4800, 'cat': 'Narrow', 'co2': 3.0},
             'A350': {'range': 15000, 'fuel': 32, 'capacity': 300, 'op_cost': 12000, 'cat': 'Wide', 'co2': 2.8},
-            'B787': {'range': 14000, 'fuel': 30, 'capacity': 290, 'op_cost': 11500, 'cat': 'Wide', 'co2': 2.7}
+            'B787': {'range': 14000, 'fuel': 30, 'capacity': 290, 'op_cost': 11500, 'cat': 'Wide', 'co2': 2.7},
+            # v22.0 Propulsions
+            'Alice-E': {'range': 440, 'fuel': 1, 'capacity': 9, 'op_cost': 500, 'cat': 'Narrow', 'co2': 0.0},
+            'ZeroAvia-H2': {'range': 1800, 'fuel': 4, 'capacity': 60, 'op_cost': 2000, 'cat': 'Narrow', 'co2': 0.5}
+        }
         }
         
         self.aircraft_pool = {
@@ -43,6 +47,12 @@ class AdvancedAirlineSimulator:
         lat1, lon1 = self.airports[p1]['lat'], self.airports[p1]['lon']
         lat2, lon2 = self.airports[p2]['lat'], self.airports[p2]['lon']
         return np.sqrt((lat1-lat2)**2 + (lon1-lon2)**2) * 111
+
+    def _is_electric(self, ac_type):
+        return ac_type == "Alice-E"
+
+    def _is_hydrogen(self, ac_type):
+        return ac_type == "ZeroAvia-H2"
 
     def generate_full_scenario(self, days=1):
         """
