@@ -6,59 +6,58 @@ logger = logging.getLogger("AviationSingularity.Security")
 
 class AdversarialGuard:
     """
-    v22.0 Cybersecurity Layer for Safety-Critical AI.
-    Detects and mitigates "Data Poisoning" or "Adversarial Injections".
+    v25.0 Robust Defense against Adversarial Perturbations.
+    
+    Implements:
+    1. Z-Score outlier detection.
+    2. Delta-Noise Filtering (Median-based smoothing).
+    3. Operator Alerting.
     """
-    def __init__(self, historical_df=None):
-        # Basis for anomaly detection (Z-Score)
-        # In production, this would be trained on months of ops data
-        self.stats = {
-            'mean_delay': 15.0,
-            'std_delay': 25.0,
-            'max_pax': 450,
-            'min_tat': 30 # Mandatory Turn-Around
-        }
+    def __init__(self, threshold=3.5):
+        self.threshold = threshold
+        self.noise_meta = {"detected": False, "intensity": 0.0}
 
-    def validate_tactical_data(self, df: pd.DataFrame) -> dict:
+    def validate_tactical_data(self, df):
         """
-        Scans incoming flight data for adversarial patterns.
+        Scans for malicious data injections (e.g., fake delays).
+        v25.0: Automatically filters noise and informs operator.
         """
-        anomalies = []
-        is_safe = True
+        if df.empty or 'assigned_delay' not in df.columns:
+            return {"is_safe": True, "noise": self.noise_meta}
+
+        delays = df['assigned_delay'].astype(float)
+        mean = delays.mean()
+        std = delays.std()
         
-        # 1. Detect Impossible Delays (Injection Attack)
-        # If any flight has a delay > 12 hours without a extreme weather event, flag it.
-        heavy_delays = df[df['assigned_delay'] > 480]
-        if not heavy_delays.empty:
-            anomalies.append({
-                "type": "DELAY_INJECTION",
-                "severity": "CRITICAL",
-                "message": f"Detected {len(heavy_delays)} flights with >480min unrealistic delays."
-            })
-            is_safe = False
+        if std == 0: return {"is_safe": True, "noise": self.noise_meta}
+        
+        z_scores = (delays - mean).abs() / std
+        anomalies = z_scores > self.threshold
+        
+        noise_level = anomalies.sum() / len(df)
+        if noise_level > 0.02:
+            self.noise_meta = {"detected": True, "intensity": noise_level}
+            logger.warning(f"🚨 ADVERSARIAL NOISE DETECTED: {noise_level:.1%}")
+            return {"is_safe": False, "noise": self.noise_meta}
             
-        # 2. Check for Turn-Around Violations (Instruction Manipulation)
-        # Attempt to force groundings by shrinking TAT
-        # (This is a simplified check)
-        
-        # 3. Detect "Z-Score" outliers on Revenue/Demand
-        # (Someone trying to bias the optimizer by fake profits)
-        
-        logger.info(f"🛡️ Adversarial Scrutiny: {'SAFE' if is_safe else 'ALERT'}")
-        
-        return {
-            "is_safe": is_safe,
-            "anomalies": anomalies,
-            "security_score": 100 if is_safe else 0
-        }
+        return {"is_safe": True, "noise": self.noise_meta}
 
-    def sanitize_scenario(self, df: pd.DataFrame) -> pd.DataFrame:
+    def sanitize_scenario(self, df):
         """
-        Neutralizes malicious telemetry by capping values to historical safe-bounds.
+        Automatically cleans the scenario using robust smoothing (Median Filtering).
         """
-        df_safe = df.copy()
-        # Cap delays to 480 as a safety measure
-        df_safe['assigned_delay'] = df_safe['assigned_delay'].clip(0, 480)
-        return df_safe
+        clean_df = df.copy()
+        
+        # v25.0: Automatic Noise Removal
+        # Replace outliers with the rolling median (denoising)
+        if 'assigned_delay' in clean_df.columns:
+            median_val = clean_df['assigned_delay'].median()
+            delays = clean_df['assigned_delay'].astype(float)
+            z_scores = (delays - delays.mean()).abs() / (delays.std() + 1e-6)
+            
+            # Reset extreme noise to median
+            clean_df.loc[z_scores > self.threshold, 'assigned_delay'] = int(median_val)
+            
+        return clean_df
 
 security_guard = AdversarialGuard()

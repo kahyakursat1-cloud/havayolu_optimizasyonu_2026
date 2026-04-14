@@ -17,6 +17,11 @@ class AdvancedAirlineSimulator:
             'JFK': {'capacity': 8, 'delay_factor': 1.4, 'lat': 40.641, 'lon': -73.778}
         }
         
+        # v25.0 Real IST Pier Map (Approximate distance in minutes from Hub)
+        self.ist_piers = {
+            'A': 15, 'B': 12, 'D': 10, 'F': 22, 'G': 8
+        }
+        
         self.aircraft_specs = {
             'B787': {'range': 14000, 'fuel': 30, 'capacity': 290, 'op_cost': 11500, 'cat': 'Wide', 'co2': 2.7},
             # v22.0 Propulsions
@@ -164,7 +169,10 @@ class AdvancedAirlineSimulator:
                     'market_qsi_weight': random.uniform(0.8, 1.3) if is_night == 0 else random.uniform(0.5, 0.9), # Night flights have lower preference
                     'saf_usage': 0.0,
                     'engine_health': self.aircraft_pool[ac_id]['engine_health'],
-                    'maintenance_reason': self.aircraft_pool[ac_id].get('maintenance_reason')
+                    'maintenance_reason': self.aircraft_pool[ac_id].get('maintenance_reason'),
+                    # v25.0 Terminal-Aware Logic
+                    'gate_id': f"{random.choice(list(self.ist_piers.keys()))}{random.randint(1,40)}",
+                    'pax_mobility_index': random.uniform(0.7, 1.0) # 1.0 = High Mobility
                 })
         
         df = pd.DataFrame(flights)

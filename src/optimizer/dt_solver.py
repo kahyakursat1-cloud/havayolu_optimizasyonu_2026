@@ -216,23 +216,49 @@ class DigitalTwinSolver:
             
         return pd.concat(full_results).drop_duplicates('flight_id', keep='last')
 
+    def _calculate_ist_gate_distance(self, g1, g2):
+        """
+        v25.0 Real IST Pier Map (Approximate distance in minutes from Hub)
+        """
+        ist_piers = {'A': 15, 'B': 12, 'D': 10, 'F': 22, 'G': 8}
+        
+        try:
+            p1, p2 = str(g1)[0], str(g2)[0]
+            if p1 == p2: return 5 # Same pier
+            # Distances are from Hub. To go A -> B, you go A -> Hub -> B.
+            return ist_piers.get(p1, 15) + ist_piers.get(p2, 15)
+        except Exception:
+            return 30 # Safe default
+
     def _check_time_feasibility_v16(self, f1, f2, crew_mode=False):
         """
-        v22.0 Propulsion-aware Turnaround.
-        Checks if f2 can be flown after f1 by the same aircraft or crew.
+        v25.0 Terminal-Gate Aware Dynamic MCT.
+        Fulfills the 'Personalized and Dynamic MCT' requirement.
         """
         t1_arr = self.flights.loc[f1, 'arrival_time']
         t2_dep = self.flights.loc[f2, 'departure_time']
         
         ac_type = self.flights.loc[f1, 'aircraft_type']
+        origin = self.flights.loc[f2, 'origin']
         
+        # v25.0 Dynamic Gate-to-Gate Distance
+        g1 = self.flights.loc[f1, 'gate_id']
+        g2 = self.flights.loc[f2, 'gate_id']
+        mobility = self.flights.loc[f1, 'pax_mobility_index']
+        
+        walking_time = 0
+        if origin == "IST":
+             walking_time = self._calculate_ist_gate_distance(g1, g2)
+             walking_time = walking_time / mobility # Slower for low mobility
+             
         # Mandatory Charging/Refueling Windows
         if ac_type == "Alice-E":
             tat = 90
         elif ac_type == "ZeroAvia-H2":
             tat = 60
         else:
-            tat = 45 if not crew_mode else 60
+            # Baseline Turnaround + Dynamic Walking Buffer
+            tat = (45 if not crew_mode else 60) + walking_time
             
         if t2_dep < t1_arr + pd.Timedelta(minutes=tat): return False
         return True
