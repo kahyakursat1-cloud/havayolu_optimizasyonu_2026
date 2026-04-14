@@ -139,6 +139,7 @@ class AdvancedAirlineSimulator:
                     'co2_kg': dist * self.aircraft_specs[ac_type]['co2'],
                     'op_cost_tl': self.aircraft_specs[ac_type]['op_cost'],
                     'delay_cost_per_min': 800 if destination in ['IST', 'LHR', 'JFK'] else 500,
+                    'market_qsi_weight': random.uniform(0.8, 1.3) if is_night == 0 else random.uniform(0.5, 0.9), # Night flights have lower preference
                     'saf_usage': 0.0
                 })
         

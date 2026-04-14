@@ -13,8 +13,9 @@ _MAX_CO2_KG = 50_000.0
 _MAX_PAX_CONN = 50.0
 _MAX_WEATHER_RISK = 1.0
 _MAX_DELAY_COST = 5_000.0
+_MAX_NETWORK_DELAY = 120.0
 
-OBS_DIM = 10
+OBS_DIM = 11
 
 class AviationRLBotEnv(gym.Env):
     """
@@ -35,6 +36,7 @@ class AviationRLBotEnv(gym.Env):
       7  dist_km              — route length (operational complexity)
       8  co2_kg               — carbon cost sensitivity
       9  pax_connection_count — downstream connection vulnerability
+      10 network_congestion   — total system delay pressure
 
     Action Space (6 discrete actions):
       0: Keep Original         — no intervention
@@ -84,6 +86,7 @@ class AviationRLBotEnv(gym.Env):
             min(1.0, f.get('dist_km', 0) / _MAX_DIST_KM),
             min(1.0, f.get('co2_kg', 0) / _MAX_CO2_KG),
             min(1.0, f.get('pax_connection_count', 0) / _MAX_PAX_CONN),
+            min(1.0, self.current_df['assigned_delay'].mean() / _MAX_NETWORK_DELAY)
         ], dtype=np.float32)
         return obs
 

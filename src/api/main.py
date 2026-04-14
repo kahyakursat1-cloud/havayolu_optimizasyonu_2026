@@ -25,6 +25,7 @@ from src.analytics.foresight_engine import foresight_engine
 from src.data_connectors.live_sync import ExternalDataConnector
 from src.models.evolution_engine import evolution_engine
 from src.models.cognitive_narrative import narrator
+from src.analytics.robustness_engine import RobustnessSimulator
 import asyncio
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -163,6 +164,12 @@ async def get_scenario():
     df_copy['lat'] = df_copy['origin_lat']
     df_copy['lon'] = df_copy['origin_lon']
     
+    # v20.0: Expose Operational Fidelity data
+    if 'tankered_fuel' not in df_copy.columns:
+        df_copy['tankered_fuel'] = 0
+    if 'market_qsi_weight' not in df_copy.columns:
+        df_copy['market_qsi_weight'] = 1.0
+    
     data_json = df_copy.to_json(orient='records', date_format='iso')
     return json.loads(data_json)
 
@@ -172,7 +179,28 @@ async def get_airports():
 
 @app.get("/api/analytics/kpi")
 async def get_kpis():
-    return state.kpi_engine.calculate_fleet_kpis(state.df)
+    kpis = state.kpi_engine.calculate_fleet_kpis(state.df)
+    
+    # v20.0: Inject Robustness Score into KPI dashboard
+    try:
+        sim = RobustnessSimulator(n_simulations=100) # Fast check for dashboard
+        resilience = sim.evaluate_schedule(state.df)
+        kpis["stability_score"] = resilience["stability_score"]
+        kpis["stability_metrics"] = resilience
+    except Exception as e:
+        logger.warning(f"Resilience Engine Bypass: {e}")
+        kpis["stability_score"] = 0
+        
+    return kpis
+
+@app.get("/api/analytics/robustness")
+async def get_robustness_deep():
+    """
+    v20.0 Deep Stress Test: Runs a high-fidelity (N=1000) robustness simulation.
+    """
+    sim = RobustnessSimulator(n_simulations=1000)
+    result = sim.evaluate_schedule(state.df)
+    return result
 
 @app.get("/api/sync/live-traffic")
 async def get_live_traffic():

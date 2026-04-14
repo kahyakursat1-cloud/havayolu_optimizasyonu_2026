@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def train_neural_commander():
-    logger.info("🚀 Initializing Neural Commander Training Loop (v19.0 10-Dim Obs Space)...")
+    logger.info("🚀 Initializing Neural Commander Training Loop (v20.0 11-Dim Obs Space)...")
     
     # Setup the simulator the right way
     sim = AdvancedAirlineSimulator(seed=42)
@@ -27,11 +27,11 @@ def train_neural_commander():
                 batch_size=64, 
                 tensorboard_log="./logs/ai_training/")
     
-    logger.info("🧠 Brain Synapsing... Starting 25,000 training steps for 10-dim state space.")
+    logger.info("🧠 Brain Synapsing... Starting 25,000 training steps for 11-dim state space.")
     model.learn(total_timesteps=25000)
     
     # Save the professional grade model
-    model_path = os.path.join("src", "models", "shikra_v3_10dim")
+    model_path = os.path.join("src", "models", "shikra_v4_11dim")
     model.save(model_path)
     logger.info(f"✅ Training Complete. Neural model saved as {model_path}.zip")
 

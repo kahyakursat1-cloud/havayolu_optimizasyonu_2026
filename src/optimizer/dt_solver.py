@@ -120,6 +120,12 @@ class DigitalTwinSolver:
         for f in F:
             s[f] = model.NewIntVar(0, 100, f's_{f}')
 
+        # v20.0: Fuel Tankering Decision (Weight vs Cost)
+        # t[f] -> Extra fuel carried from origin to destination (kg) 
+        t = {} 
+        for f in F:
+            t[f] = model.NewIntVar(0, 5000, f'tanker_{f}')
+
         # 3. CONSTRAINTS (v17.2 Optimized Generation)
         # Pre-calculating conflicts once to reduce O(N^2 * A) to O(N^2 + N * A)
         conflicting_pairs = []
@@ -178,7 +184,9 @@ class DigitalTwinSolver:
         fuel_costs = []
         delay_penalty = []
         carbon_penalty = []
-        cqi_bonus = [] # Connection Quality Index Bonus
+        cqi_bonus = [] # Connection Quality Index (v20.0: QSI Driven)
+        tankering_savings = []
+        weight_penalty_co2 = []
 
         for f in F:
             active = (1 - z[f])
@@ -189,18 +197,26 @@ class DigitalTwinSolver:
             fuel_costs.append(active * base_fuel + s[f] * (base_fuel * 3 // 100))
             delay_penalty.append(d[f] * int(self.flights.loc[f, 'delay_cost_per_min']))
             
-            # v16.0 CQI: Score based on load factor and connection count
-            lf = self.flights.loc[f, 'load_factor']
-            pax_conn = int(self.flights.loc[f, 'pax_connection_count'])
-            # High load factor flights are prioritized over low ones (Commercial requirement)
-            cqi_bonus.append(active * int(lf * 5000) - d[f] * pax_conn * 100)
+            # v20.0 Strategic Quality (QSI): Weight by commercial preference
+            qsi_weight = float(self.flights.loc[f, 'market_qsi_weight'])
+            # Bonus for high QSI flights that are NOT delayed
+            cqi_bonus.append(active * int(lf * qsi_weight * 10000) - d[f] * pax_conn * 200)
+
+            # v20.0: Fuel Tankering Logic
+            # Extra weight burns more fuel (~3% of extra weight per 1000km)
+            dist_factor = self.flights.loc[f, 'dist_km'] / 1000.0
+            fuel_burn_penalty = t[f] * int(dist_factor * 3) // 100 
+            
+            # Savings if fuel at origin is cheaper (simulated delta of 5 TL/kg)
+            tankering_savings.append(t[f] * 5)
+            weight_penalty_co2.append(fuel_burn_penalty * 3150) # 3.15kg CO2 per kg fuel
 
             base_co2 = int(self.flights.loc[f, 'co2_kg'])
-            co2_emitted = active * base_co2 - s[f] * (base_co2 * 8 // 10)
+            co2_emitted = active * base_co2 - s[f] * (base_co2 * 8 // 10) + weight_penalty_co2[-1]
             carbon_penalty.append(co2_emitted * 20)
             
         model.Maximize(
-            sum(revenue) + sum(cqi_bonus)
+            sum(revenue) + sum(cqi_bonus) + sum(tankering_savings)
             - sum(op_costs) 
             - sum(fuel_costs) 
             - sum(delay_penalty) 
@@ -214,7 +230,7 @@ class DigitalTwinSolver:
 
         if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
             logger.info(f"ANALYST SEVİYESİ ÇÖZÜM BULUNDU! Skor: {solver.ObjectiveValue():,} TL")
-            return self._format_results(solver, x, y, z, d, s, eligible_aircraft)
+            return self._format_results(solver, x, y, z, d, s, t, eligible_aircraft)
         logger.warning("Optimum çözüm bulunamadı, kısıtlar gözden geçiriliyor.")
 
     def solve_disruption(self, disruption_event):
@@ -233,14 +249,18 @@ class DigitalTwinSolver:
         t2_dep = self.flights.loc[f2, 'departure_time']
         
         apt = self.flights.loc[f1, 'destination']
+        # v20.0 Dynamic MCT: Scale base turnaround by airport complexity
         base_turn = 45 
-        if apt == 'IST': base_turn = 60
-        elif apt in ['LHR', 'JFK']: base_turn = 75
+        if apt == 'IST': base_turn = 60 # Mega-hub
+        elif apt in ['LHR', 'JFK']: base_turn = 75 # International
         
-        # Risk Multiplier: weather_risk adds extra buffer
+        # Risk Multiplier: weather_risk adds extra buffer to the required plan window
         risk_buffer = int(self.flights.loc[f1, 'weather_risk'] * 60)
         
-        turn_min = base_turn + risk_buffer
+        # Network Load Impact: more flights = higher ground overhead
+        load_impact = int(self.flights.loc[f1, 'load_factor'] * 15)
+        
+        turn_min = base_turn + risk_buffer + load_impact
         if crew_mode: turn_min = max(turn_min, 60)
         
         if t2_dep < t1_arr + pd.Timedelta(minutes=turn_min): return False
@@ -311,11 +331,12 @@ class DigitalTwinSolver:
         if t2_dep < t1_arr + pd.Timedelta(minutes=turn_min): return False
         return True
 
-    def _format_results(self, solver, x, y, z, d, s, eligible_aircraft):
+    def _format_results(self, solver, x, y, z, d, s, t, eligible_aircraft):
         res = self.flights.copy()
         res['is_canceled'] = [solver.Value(z[f]) for f in self.flights.index]
         res['assigned_delay'] = [solver.Value(d[f]) for f in self.flights.index]
         res['saf_usage'] = [solver.Value(s[f]) for f in self.flights.index]
+        res['tankered_fuel'] = [solver.Value(t[f]) for f in self.flights.index]
 
         assigned_acs = []
         for f in self.flights.index:

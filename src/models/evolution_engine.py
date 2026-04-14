@@ -29,11 +29,11 @@ class EvolutionEngine:
       3. The improved model is versioned and saved.
 
     Observation space expected by the loaded PPO model (must match rl_env.py):
-      10-dim float32: [delay, pax, ac_fh, crew_fatigue, load_factor,
-                       weather_risk, revenue, dist_km, co2, pax_conn]
+      11-dim float32: [delay, pax, ac_fh, crew_fatigue, load_factor,
+                       weather_risk, revenue, dist_km, co2, pax_conn, network_congestion]
     """
 
-    def __init__(self, model_path: str = "src/models/shikra_v3_10dim.zip"):
+    def __init__(self, model_path: str = "src/models/shikra_v4_11dim.zip"):
         self.model_path = model_path
         self.experience_buffer: deque = deque(maxlen=1000)
         self.lock = threading.Lock()
@@ -45,7 +45,7 @@ class EvolutionEngine:
             try:
                 from stable_baselines3 import PPO
                 self.model = PPO.load(model_path)
-                logger.info(f"Loaded Shikra 10-dim model from {model_path}")
+                logger.info(f"Loaded Shikra 11-dim model from {model_path}")
             except Exception as e:
                 logger.warning(f"Model load failed: {e}. Evolution will use untrained policy.")
         else:
