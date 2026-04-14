@@ -1,6 +1,12 @@
-// 🚀 Aviation Singularity v17.0 "Quantum Finale" Command Logic
-
 const API_BASE = "/api";
+
+// v26.0: Global Error Bridge
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+    const errorMsg = `[CRITICAL JS] ${msg} (Line: ${lineNo})`;
+    if (typeof logAction === 'function') logAction(errorMsg);
+    console.error(errorMsg, error);
+    return false;
+};
 
 // --- State Management ---
 let fleetData = [];
@@ -8,25 +14,105 @@ let trajectoryChart;
 let causalChart;
 let viewMode = '2D'; // '2D' or '3D'
 
-// Three.js Globals
-let scene, camera, renderer, controls;
-let aircraftMarkers = {}; // {flight_id: {mesh: Mesh, tag: Sprite}}
-let pathLines = {}; // {flight_id: line}
+// v32.0: Mapping Constants for MapLibre (Mercator)
+let map;
+let aircraftLayer;
+let customLayer;
 
-// v20.0 Geographic-to-Tactical Mapping (Origin: IST)
-const SCALE_LAT = 15;
-const SCALE_LON = 15;
-const CITY_COORDS = {
-    'IST': [0, 0], // Center
-    'ADB': [(27.15 - 28.74) * SCALE_LON, (38.42 - 41.27) * SCALE_LAT],
-    'AYT': [(30.71 - 28.74) * SCALE_LON, (36.88 - 41.27) * SCALE_LAT],
-    'ESB': [(32.86 - 28.74) * SCALE_LON, (39.93 - 41.27) * SCALE_LAT],
-    'LHR': [(-0.45 - 28.74) * SCALE_LON, (51.47 - 41.27) * SCALE_LAT],
-    'CDG': [(2.55 - 28.74) * SCALE_LON, (49.0 - 41.27) * SCALE_LAT],
-    'FRA': [(8.57 - 28.74) * SCALE_LON, (50.0 - 41.27) * SCALE_LAT],
-    'JFK': [(-73.77 - 28.74) * SCALE_LON, (40.64 - 41.27) * SCALE_LAT],
-    'DXB': [(55.36 - 28.74) * SCALE_LON, (25.25 - 41.27) * SCALE_LAT]
-};
+// v32.0: AI Global State
+let evolutionStats = { xp: 0, cycles: 0, status: 'Stable' };
+
+let scene, camera, renderer;
+let aircraftMarkers = {}; // {flight_id: {mesh: Mesh}}
+let lastNarrative = "";
+let isForesightActive = false;
+let foresightInterval = null;
+
+// v34.0: Tactical Typewriter Effect for Gemma Reports
+function typeWriter(elementId, text, speed = 30) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    element.innerHTML = "";
+    let i = 0;
+    function type() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
+        }
+    }
+    type();
+}
+
+async function updateAIBriefing() {
+    try {
+        const response = await fetch(`${API_BASE}/ai/narrative`);
+        const data = await response.json();
+        
+        if (data.report && data.report !== lastNarrative) {
+            lastNarrative = data.report;
+            typeWriter("briefing-terminal", data.report);
+            logAction(`[GEMMA] New Operational Briefing Received. Tactical Insight Delivered.`);
+        }
+    } catch (e) {
+        console.warn("Gemma Briefing Error:", e);
+    }
+}
+
+// v35.0: Quantum Foresight - Toggle Predictive Heatmap Layer
+function toggleForesight() {
+    isForesightActive = !isForesightActive;
+    const btn = document.getElementById('btn-foresight');
+    
+    if (isForesightActive) {
+        btn.classList.add('active');
+        logAction("[FORESIGHT] Strategic Projection Analysis Initiated (T+30m).");
+        updateForesightHeatmap();
+        foresightInterval = setInterval(updateForesightHeatmap, 30000);
+    } else {
+        btn.classList.remove('active');
+        if (map.getLayer('foresight-heat')) map.setLayoutProperty('foresight-heat', 'visibility', 'none');
+        clearInterval(foresightInterval);
+        logAction("[FORESIGHT] Predictive Analysis Standby.");
+    }
+}
+
+async function updateForesightHeatmap() {
+    if (!isForesightActive || !map) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/analytics/foresight-heatmap`);
+        const data = await response.json();
+        
+        if (!map.getSource('foresight-src')) {
+            map.addSource('foresight-src', { type: 'geojson', data: data });
+            map.addLayer({
+                id: 'foresight-heat',
+                type: 'heatmap',
+                source: 'foresight-src',
+                maxzoom: 9,
+                paint: {
+                    'heatmap-weight': ['get', 'intensity'],
+                    'heatmap-intensity': 1,
+                    'heatmap-color': [
+                        'interpolate', ['linear'], ['heatmap-density'],
+                        0, 'rgba(99, 102, 241, 0)',
+                        0.2, 'rgba(129, 140, 248, 0.4)',
+                        0.5, 'rgba(168, 85, 247, 0.7)',
+                        0.8, 'rgba(250, 204, 21, 0.9)'
+                    ],
+                    'heatmap-radius': 50,
+                    'heatmap-opacity': 0.6
+                }
+            });
+        } else {
+            map.getSource('foresight-src').setData(data);
+            map.setLayoutProperty('foresight-heat', 'visibility', 'visible');
+        }
+    } catch (err) {
+        console.error("Foresight Sync Failed:", err);
+    }
+}
 
 // --- API Calls ---
 async function fetchScenario() {
@@ -72,16 +158,15 @@ async function syncLive() {
     }
 }
 
-// v21.3: Real-Time ADS-B Marker Engine
+// v32.0: Real-Time ADS-B Marker Engine for MapLibre
 function updateLive3DMarkers(liveFlights) {
-    if (!scene) return;
+    if (!scene || !map) return;
 
-    // Clean up existing live markers prefixed with 'LIVE_'
+    // Clear existing
     Object.keys(aircraftMarkers).forEach(id => {
         if (id.startsWith('LIVE_')) {
             const marker = aircraftMarkers[id];
             if (marker.mesh) scene.remove(marker.mesh);
-            if (marker.tag) scene.remove(marker.tag);
             delete aircraftMarkers[id];
         }
     });
@@ -89,30 +174,66 @@ function updateLive3DMarkers(liveFlights) {
     liveFlights.forEach(f => {
         const id = `LIVE_${f.flight_id}`;
         
-        // Convert real Lat/Lon to Tactical Plane Coords (IST origin)
-        const posX = (f.lon - 28.74) * SCALE_LON;
-        const posY = (f.lat - 41.27) * SCALE_LAT;
-        const posZ = 12 + (f.alt / 1500); 
+        // v32.5: Accurate Metric Scaling for IST (Lon 28.74, Lat 41.27)
+        const lonOffset = (f.lon - 28.74) * 83500; 
+        const latOffset = (f.lat - 41.27) * 111320;
+        const alt = f.alt || 3000;
 
-        const geometry = new THREE.ConeGeometry(5, 12, 4);
+        const geometry = new THREE.ConeGeometry(800, 2200, 4); 
         const material = new THREE.MeshPhongMaterial({ 
-            color: 0x22c55e, // Emerald Green for LIVE traffic
-            emissive: 0x14532d,
-            emissiveIntensity: 0.5
+            color: f.status === "DELAYED" ? 0xf43f5e : 0x0ea5e9,
+            emissive: f.status === "DELAYED" ? 0xf43f5e : 0x0ea5e9,
+            emissiveIntensity: 0.8,
+            transparent: true,
+            opacity: 0.95
         });
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(posX, posY, posZ);
+        mesh.position.set(lonOffset, latOffset, alt);
         mesh.rotateX(Math.PI / 2);
-        
-        // Align heading (OpenSky headings are degrees)
         mesh.rotation.z = - (f.heading * Math.PI / 180);
         
-        scene.add(mesh);
-        const tag = createAircraftTag(f.flight_id);
-        tag.position.set(posX, posY + 12, posZ + 8);
+        // Internal tactical pulse effect data
+        mesh.userData = { 
+            baseScale: 1.0, 
+            pulseSpeed: 2 + Math.random(),
+            isDelayed: f.status === "DELAYED"
+        };
         
-        aircraftMarkers[id] = { mesh, tag };
+        scene.add(mesh);
+        aircraftMarkers[id] = { mesh };
+
+        // v32.0: Collect data for AI Training (Experience Buffer)
+        collectAIEvidence(f);
     });
+}
+
+function collectAIEvidence(flight) {
+    // Report to backend to feed the Evolution Engine
+    fetch(`${API_BASE}/evolution/summary`, {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            observation: [flight.lat, flight.lon, flight.alt, flight.velocity],
+            reward: flight.status === "OPTIMAL" ? 1 : -1
+        })
+    }).catch(() => {});
+}
+
+// v22.2: Brain Stats Polling Engine
+async function updateEvolutionStats() {
+    try {
+        const response = await fetch(`${API_BASE}/evolution/summary`);
+        if (response.ok) {
+            const stats = await response.json();
+            document.getElementById('evo-xp').innerText = stats.experience_points;
+            document.getElementById('evo-cycles').innerText = stats.evolution_cycles;
+            document.getElementById('evo-status').innerText = stats.status.toUpperCase();
+            
+            // Progress bar (Loops every 100 XP for visual feel)
+            const progress = (stats.experience_points % 100);
+            document.getElementById('evo-progress').style.width = `${progress}%`;
+        }
+    } catch (err) {}
 }
 
 async function runOptimize() {
@@ -177,211 +298,180 @@ async function triggerStressTest() {
     } catch (err) {}
 }
 
-// --- 3D STRATEGIC VIEW (Three.js) ---
-function initThreeScene() {
+// v32.0: MapLibre + Three.js Custom Layer Initialization
+function initMapLibre() {
     const container = document.getElementById('three-container');
     if (!container) return;
-    
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x020617);
-    
-    camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 2000);
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    
-    const width = container.clientWidth || 800;
-    const height = container.clientHeight || 600;
-    renderer.setSize(width, height);
-    container.appendChild(renderer.domElement);
 
-    // v20.0: Tactical Interactive Controls
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.screenSpacePanning = true;
-    controls.minDistance = 50;
-    controls.maxDistance = 1500;
-    
-    // v20.0: Tactical World Map Plane with v21.1 Load Guard
-    const loader = new THREE.TextureLoader();
-    loader.load('assets/map_texture.png', 
-        (texture) => {
-            console.log("✅ Tactical Map Texture Loaded Successfully.");
-            const mapGeo = new THREE.PlaneGeometry(3000, 3000);
-            const mapMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.8 });
-            const mapPlane = new THREE.Mesh(mapGeo, mapMat);
-            mapPlane.position.z = 0;
-            scene.add(mapPlane);
+    map = new maplibregl.Map({
+        container: 'three-container',
+        style: {
+            "version": 8,
+            "sources": {},
+            "layers": [
+                {
+                    "id": "background",
+                    "type": "background",
+                    "paint": { "background-color": "#020617" }
+                }
+            ]
         },
-        undefined,
-        (err) => {
-            console.error("❌ Map Texture Load Failed:", err);
-            // Fallback grid for visibility
-            const fallbackGrid = new THREE.GridHelper(3000, 60, 0x1e293b, 0x0f172a);
-            fallbackGrid.rotation.x = Math.PI / 2;
-            scene.add(fallbackGrid);
-        }
-    );
-
-    // v19.0: Strategic City Hubs & Labels
-    Object.keys(CITY_COORDS).forEach(city => {
-        const coords = CITY_COORDS[city];
-        createCityLabel(city, coords[0], coords[1]);
-        
-        // Visual Anchor for Hubs
-        const hubGeo = new THREE.RingGeometry(4, 6, 32);
-        const hubMat = new THREE.MeshBasicMaterial({ color: city === 'IST' ? 0xa855f7 : 0x0ea5e9, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
-        const ring = new THREE.Mesh(hubGeo, hubMat);
-        ring.position.set(coords[0], coords[1], 1);
-        scene.add(ring);
+        center: [28.74, 41.27], // Istanbul Hub
+        zoom: 9,
+        pitch: 45,
+        antialias: true
     });
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const light = new THREE.PointLight(0x0ea5e9, 2.5, 1000);
-    light.position.set(0, 0, 250);
-    scene.add(light);
-
-    camera.position.set(0, 0, 800); 
-    controls.update();
-
-    animateThree();
-}
-
-// v19.0 City Label Sprite Helper
-function createCityLabel(text, x, y) {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.width = 128; // Smaller for better performance
-	canvas.height = 64;
-    context.font = "Bold 24px 'Orbitron', sans-serif";
-    context.textAlign = "center";
-    context.fillStyle = text === 'IST' ? "#a855f7" : "#38bdf8";
-    context.fillText(text, 64, 40);
-    const texture = new THREE.CanvasTexture(canvas);
-    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
-    const sprite = new THREE.Sprite(spriteMat);
-    sprite.scale.set(40, 20, 1);
-    sprite.position.set(x, y + 10, 5);
-    scene.add(sprite);
-}
-
-// v20.0 Aircraft Tag Sprite Helper
-function createAircraftTag(flight_id) {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.width = 128;
-    canvas.height = 64;
-    context.font = "18px 'Orbitron', sans-serif";
-    context.textAlign = "center";
-    context.fillStyle = "#ffffff";
-    context.fillText(flight_id, 64, 40);
-    const texture = new THREE.CanvasTexture(canvas);
-    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
-    const sprite = new THREE.Sprite(spriteMat);
-    sprite.scale.set(30, 15, 1);
-    scene.add(sprite);
-    return sprite;
-}
-
-function animateThree() {
-    requestAnimationFrame(animateThree);
-    if (renderer && scene && camera) {
-        const time = Date.now() * 0.001;
-        
-        // v17.6 Pulsing Hub Effect
-        if (hubGlow) {
-            const s = 1 + Math.sin(time * 3) * 0.15;
-            hubGlow.scale.set(s, s, 1);
-            hubGlow.material.opacity = 0.4 + Math.sin(time * 3) * 0.2;
-        }
-
-        // v20.0: Update Controls
-        if (controls) controls.update();
-
-        // v18.0 Living Airspace: Animate aircraft along paths
-        Object.keys(aircraftMarkers).forEach(id => {
-            const marker = aircraftMarkers[id];
-            const mesh = marker.mesh;
-            const tag = marker.tag;
-
-            // Slow tactical movement loop
-            const progress = (time * 0.05 + parseFloat(id.split('_')[1] || 0) * 0.1) % 1.0;
-            
-            const flight = fleetData.find(f => f.flight_id === id);
-            if (flight) {
-                const start = CITY_COORDS[flight.origin] || [0, 0];
-                const end = CITY_COORDS[flight.destination] || [10, 10];
-                
-                // Linear move on Tactical Map Plane
-                const posX = start[0] + (end[0] - start[0]) * progress;
-                const posY = start[1] + (end[1] - start[1]) * progress;
-                const posZ = 5; 
-                
-                mesh.position.set(posX, posY, posZ);
-                mesh.lookAt(new THREE.Vector3(end[0], end[1], posZ));
-                mesh.rotateX(Math.PI / 2);
-                
-                // v20.0: Tag Following
-                if (tag) {
-                    tag.position.set(posX, posY + 8, posZ + 5);
-                }
-
-                // Shimmering Delay Effect
-                if (flight.assigned_delay > 0) {
-                    mesh.scale.setScalar(1.2 + Math.sin(time * 8) * 0.4);
-                }
-            }
+    // Add High-Res ArcGIS Satellite Layer
+    map.on('load', () => {
+        map.addSource('satellite', {
+            type: 'raster',
+            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+            tileSize: 256
+        });
+        map.addLayer({
+            id: 'satellite',
+            type: 'raster',
+            source: 'satellite',
+            minzoom: 0,
+            maxzoom: 22
         });
 
-        renderer.render(scene, camera);
-    }
-}
-
-function drawFlightPath(flight_id, origin, dest) {
-    if (pathLines[flight_id]) return;
-    const start = CITY_COORDS[origin] || [0, 0];
-    const end = CITY_COORDS[dest] || [50, 50];
-    
-    // v17.6 Dynamic Arc Height
-    const dist = Math.sqrt(Math.pow(end[0]-start[0], 2) + Math.pow(end[1]-start[1], 2));
-    const arcHeight = Math.min(80, dist / 3);
-
-    const points = [];
-    points.push(new THREE.Vector3(start[0], start[1], 0));
-    const midX = (start[0] + end[0]) / 2;
-    const midY = (start[1] + end[1]) / 2;
-    points.push(new THREE.Vector3(midX, midY, arcHeight));
-    points.push(new THREE.Vector3(end[0], end[1], 0));
-    
-    const curve = new THREE.CatmullRomCurve3(points);
-    const geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(25));
-    const material = new THREE.LineBasicMaterial({ 
-        color: dist > 150 ? 0x0ea5e9 : 0x38bdf8, 
-        transparent: true, 
-        opacity: dist > 150 ? 0.6 : 0.2 
+        initThreeCustomLayer();
+        logAction("VISUAL ENGINE: MapLibre Satellite Core Online.");
     });
-    const line = new THREE.Line(geometry, material);
-    scene.add(line);
-    pathLines[flight_id] = line;
 }
 
-function update3DMarkers() {
-    if (!scene || !fleetData) return;
-    
-    fleetData.forEach((f) => {
-        if (!aircraftMarkers[f.flight_id]) {
-            // v20.0 Aircraft Silhouette Mesh
-            const geometry = new THREE.ConeGeometry(3, 8, 32); 
-            const material = new THREE.MeshPhongMaterial({ 
-                color: f.assigned_delay > 0 ? 0xf43f5e : 0xffd700, // Gold for active, Red for delay
-                emissive: f.assigned_delay > 0 ? 0x991b1b : 0x075985,
-                emissiveIntensity: 0.5
+function initThreeCustomLayer() {
+    const modelOrigin = [28.74, 41.27];
+    const modelAltitude = 0;
+    const modelRotate = [Math.PI / 2, 0, 0];
+    const modelAsMercatorCoordinate = maplibregl.MercatorCoordinate.fromLngLat(modelOrigin, modelAltitude);
+
+    const modelTransform = {
+        translateX: modelAsMercatorCoordinate.x,
+        translateY: modelAsMercatorCoordinate.y,
+        translateZ: modelAsMercatorCoordinate.z,
+        rotateX: modelRotate[0],
+        rotateY: modelRotate[1],
+        rotateZ: modelRotate[2],
+        scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits()
+    };
+
+    customLayer = {
+        id: 'aircraft-3d-layer',
+        type: 'custom',
+        renderingMode: '3d',
+        onAdd: function (map, gl) {
+            camera = new THREE.Camera();
+            scene = new THREE.Scene();
+
+            // v32.5: High-Intensity Diagnostic Lighting
+            // v32.9: Tactical Radar Pulse Ring at IST
+            const ringGeo = new THREE.RingGeometry(8000, 8500, 64);
+            const ringMat = new THREE.MeshBasicMaterial({ 
+                color: 0x0ea5e9, 
+                transparent: true, 
+                opacity: 0.3,
+                side: THREE.DoubleSide 
             });
-            const mesh = new THREE.Mesh(geometry, material);
-            scene.add(mesh);
+            radarPulse = new THREE.Mesh(ringGeo, ringMat);
+            radarPulse.position.set(0, 0, 50); // Just above ground
+            scene.add(radarPulse);
+
+            renderer = new THREE.WebGLRenderer({
+                canvas: map.getCanvas(),
+                context: gl,
+                antialias: true
+            });
+            renderer.autoClear = false;
+        },
+        render: function (gl, matrix) {
+            const time = Date.now() * 0.001;
             
-            const tag = createAircraftTag(f.flight_id);
-            aircraftMarkers[f.flight_id] = { mesh, tag };
+            // v32.9 Tactical Animations
+            if (radarPulse) {
+                const s = 1 + (time % 2) * 2;
+                radarPulse.scale.set(s, s, 1);
+                radarPulse.material.opacity = 0.4 * (1 - (time % 2) / 2);
+            }
+
+            // Animate all aircraft markers for 'System Vitality'
+            Object.keys(aircraftMarkers).forEach(id => {
+                const marker = aircraftMarkers[id];
+                if (marker && marker.mesh) {
+                    const u = marker.mesh.userData;
+                    const pulse = 1 + Math.sin(time * u.pulseSpeed) * 0.1;
+                    marker.mesh.scale.set(pulse, pulse, pulse);
+                }
+            });
+
+            const rotationX = new THREE.Matrix4().makeRotationX(modelTransform.rotateX);
+            const rotationY = new THREE.Matrix4().makeRotationY(modelTransform.rotateY);
+            const rotationZ = new THREE.Matrix4().makeRotationZ(modelTransform.rotateZ);
+
+            const m = new THREE.Matrix4().fromArray(matrix);
+            const l = new THREE.Matrix4()
+                .makeTranslation(modelTransform.translateX, modelTransform.translateY, modelTransform.translateZ)
+                .scale(new THREE.Vector3(modelTransform.scale, -modelTransform.scale, modelTransform.scale))
+                .multiply(rotationX)
+                .multiply(rotationY)
+                .multiply(rotationZ);
+
+            camera.projectionMatrix = m.multiply(l);
+            renderer.resetState();
+            renderer.render(scene, camera);
+            map.triggerRepaint();
         }
+    };
+    map.addLayer(customLayer);
+    
+    // v32.4: Trigger initial data sync as soon as the layer is ready
+    setTimeout(() => {
+        update3DMarkers();
+        syncLive();
+    }, 500);
+}
+
+// v32.0: Synchronize Scenario Aircraft markers with MapLibre
+function update3DMarkers() {
+    if (!scene || !map || !fleetData) return;
+
+    // Clear existing static markers
+    Object.keys(aircraftMarkers).forEach(id => {
+        if (!id.startsWith('LIVE_')) {
+            const marker = aircraftMarkers[id];
+            if (marker.mesh) scene.remove(marker.mesh);
+            delete aircraftMarkers[id];
+        }
+    });
+
+    fleetData.forEach((f) => {
+        // v32.5: Accurate Metric Scaling for IST
+        const lonOffset = (f.lon - 28.74) * 83500; 
+        const latOffset = (f.lat - 41.27) * 111320;
+        const alt = 2500; 
+
+        const geometry = new THREE.ConeGeometry(1000, 3000, 4); 
+        const material = new THREE.MeshPhongMaterial({ 
+            color: f.assigned_delay > 0 ? 0xf43f5e : 0xa855f7, // Purple for scenario
+            transparent: true,
+            opacity: 0.8,
+            emissive: f.assigned_delay > 0 ? 0xf43f5e : 0x7e22ce,
+            emissiveIntensity: 0.6
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(lonOffset, latOffset, alt);
+        mesh.rotateX(Math.PI / 2);
+        mesh.rotation.z = Math.PI / 4; 
+        
+        mesh.userData = { 
+            baseScale: 1.0, 
+            pulseSpeed: 1 + Math.random() 
+        };
+        
+        scene.add(mesh);
+        aircraftMarkers[f.flight_id] = { mesh };
     });
 }
 
@@ -396,15 +486,10 @@ function setViewMode(mode) {
     if (container) {
         container.classList.toggle('hidden', mode === '2D');
         if (mode === '3D') {
-            if (!scene) initThreeScene();
-            // v17.4: Force sync on switch
-            if (renderer && camera) {
-                const w = container.clientWidth;
-                const h = container.clientHeight;
-                renderer.setSize(w, h);
-                camera.aspect = w / h;
-                camera.updateProjectionMatrix();
-                update3DMarkers();
+            if (!map) {
+                initMapLibre();
+            } else {
+                map.resize();
             }
         }
     }
@@ -524,9 +609,16 @@ document.addEventListener('DOMContentLoaded', () => {
     initCharts();
     fetchScenario();
     fetchForecast();
+    updateAIBriefing(); // v34.0: Initial Neural Uplink
+    
     setInterval(() => {
         fetchScenario();
         fetchForecast();
+        updateEvolutionStats();
     }, 15000); 
+    
+    setInterval(updateEvolutionStats, 5000); // Faster polling for XP
+    setInterval(updateAIBriefing, 60000);    // v34.0: 60s Cognitive Heartbeat
+    
     if (window.lucide) lucide.createIcons();
 });

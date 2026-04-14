@@ -21,7 +21,11 @@ from src.optimizer.trajectory_a_star import TrajectoryPlannerAStar
 from src.security.ot_monitor import OTSecurityMonitor
 from src.models.causal_intelligence import BayesianCausalModel
 from src.analytics.kpi_engine import AviationKPIEngine
+from src.analytics.foresight_engine import foresight_engine
 from src.data_connectors.live_sync import ExternalDataConnector
+from src.models.evolution_engine import evolution_engine
+from src.models.cognitive_narrative import narrator
+import asyncio
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -50,6 +54,18 @@ class AppState:
 
 state = AppState()
 
+# v22.0: Background Evolution Task (Every 15 Minutes)
+async def brain_evolution_loop():
+    while True:
+        await asyncio.sleep(15 * 60) # 15 Minutes
+        success = evolution_engine.evolve_model()
+        if success:
+            logger.info("🧠 NEURAL EVOLUTION: Policy improved based on real-world trajectories.")
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(brain_evolution_loop())
+
 @app.get("/api/scenario")
 async def get_scenario():
     # Fix: Pandas Timestamps must be converted to ISO format for JSON compatibility
@@ -67,10 +83,10 @@ async def get_live_traffic():
     """
     # IST Bounding Box (Lat/Lon)
     params = {
-        "lamin": 40.7,
-        "lamax": 41.5,
-        "lomin": 28.2,
-        "lomax": 29.8
+        "lamin": 39.0,
+        "lamax": 43.5,
+        "lomin": 24.5,
+        "lomax": 32.5
     }
     url = "https://opensky-network.org/api/states/all"
     
@@ -83,9 +99,7 @@ async def get_live_traffic():
                 states = data.get("states", [])
                 flights = []
                 for s in (states or []):
-                    # OpenSky State Vector Mapping:
-                    # 0:icao24, 1:callsign, 2:origin_country, 5:lon, 6:lat, 7:baro_alt, 8:on_ground, 9:velocity, 10:true_track
-                    flights.append({
+                    raw_flight = {
                         "flight_id": s[1].strip() if s[1] else s[0],
                         "lat": s[6],
                         "lon": s[5],
@@ -93,12 +107,42 @@ async def get_live_traffic():
                         "on_ground": s[8],
                         "velocity": s[9] or 0,
                         "heading": s[10] or 0
-                    })
-                return {"active_flights": flights, "count": len(flights), "source": "OpenSky Network"}
+                    }
+                    
+                    # v22.0: Neural Inference (Route & Cause Analysis)
+                    intel = evolution_engine.infer_flight_meta(raw_flight, None, len(states))
+                    raw_flight.update(intel)
+                    
+                    flights.append(raw_flight)
+                return {"active_flights": flights, "count": len(flights), "source": "OpenSky + Intel Engine"}
             return {"active_flights": [], "count": 0, "status": "api_busy"}
         except Exception as e:
             logger.error(f"OpenSky Connector Failure: {str(e)}")
             return {"active_flights": [], "count": 0, "error": "Connection timed out"}
+
+@app.get("/api/evolution/summary")
+async def get_evolution_summary():
+    """
+    v22.0 Brain Stats: Report online learning progress.
+    """
+    return {
+        "status": "Learning Active",
+        "evolution_cycles": evolution_engine.evolution_count,
+        "experience_points": len(evolution_engine.experience_buffer),
+        "model_version": "Shikra-v1.x-Dynamic"
+    }
+
+class EvidenceData(BaseModel):
+    observation: list
+    reward: float
+
+@app.post("/api/evolution/summary")
+async def post_evolution_evidence(data: EvidenceData):
+    """
+    v32.0 Intelligence Bridge: Receive real-world experiences from the tactical map.
+    """
+    evolution_engine.collect_experience(data.observation, [0], data.reward)
+    return {"status": "success", "buffered": len(evolution_engine.experience_buffer)}
 
 from src.analytics.forecast_engine import forecaster
 from src.api.report_generator import auditor
@@ -115,6 +159,42 @@ async def get_forecast():
     except Exception as e:
         logger.error(f"Oracle Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/ai/narrative")
+async def get_ai_narrative():
+    """
+    v34.0 Cognitive Briefing: Gemma local LLM report based on real-time tactical state.
+    """
+    # v34.1: Tactical Filtering - Only send critical fields to save context tokens
+    filtered_flights = []
+    if state.df is not None:
+        for _, row in state.df.head(5).iterrows():
+            filtered_flights.append({
+                "ID": row.get("flight_id"),
+                "Stat": row.get("status"),
+                "Delay": row.get("assigned_delay", 0),
+                "LF": row.get("load_factor", 0)
+            })
+    
+    # 🧠 Generate local inference report (Offloaded to thread to prevent blocking)
+    # v35.1: Adding a random seed for variety
+    import random
+    report = await asyncio.to_thread(
+        narrator.generate_briefing, 
+        str(filtered_flights), 
+        "Active Fleet: " + str(len(state.df) if state.df is not None else 0) + " | Foresight: T+30 Prediction Active",
+        seed=random.randint(1, 1000000)
+    )
+    return {"report": report, "agent": "Gemma-2-2B-Cognitive"}
+
+@app.get("/api/analytics/foresight-heatmap")
+async def get_foresight_heatmap():
+    """
+    v35.0 Prediction Heatmap: Provides GeoJSON heatmap data for T+30 congestion zones.
+    """
+    fleet = state.df.to_dict(orient="records") if state.df is not None else []
+    geojson = foresight_engine.generate_congestion_geojson(fleet)
+    return geojson
 
 @app.get("/api/report")
 async def get_operational_report():

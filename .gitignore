@@ -12,11 +12,10 @@ __pycache__/
 # Specialized
 .gemini/
 .DS_Store
+# Data & Models
+assets/models/*.gguf
+*.zip
 *.log
-scratch/
-
-# Data & Models (Keep small datasets, but exclude huge binaries if any)
-# docs/visuals/ (Keep visuals for walkthroughs)
 
 # OS
 .DS_Store
