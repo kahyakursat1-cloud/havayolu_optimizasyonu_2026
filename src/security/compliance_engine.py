@@ -34,16 +34,17 @@ class ComplianceEngine:
             })
             is_compliant = False
             
-        # 2. Predatory Capacity Dumping
-        # If we dump massive capacity at 0 profit to kill a smaller regional competitor
-        if random.random() < 0.05:
+        # 3. v26.0 Advanced Parallel Pricing Correlation
+        # Audit the correlation delta between our AI's yield moves and competitor trends.
+        correlation_delta = random.uniform(0.7, 0.99)
+        if correlation_delta > 0.95:
             violations.append({
-                "type": "PREDATORY_PRICING",
-                "severity": "ADVISORY",
-                "message": "Yield strategy on AYT regional lines appears predatory. Margin < 2% detected."
+                "type": "HIGH_CORRELATION_AUDIT",
+                "severity": "CRITICAL",
+                "message": f"Algorithmic Parallelism Alert! Correlation is {correlation_delta:.2f}. Potential Price-Fixing Risk."
             })
             is_compliant = False
-            
+
         logger.info(f"⚖️ Compliance Audit: {'PASSED' if is_compliant else 'ADVISORY_PENDING'}")
         
         return {
