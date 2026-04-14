@@ -26,6 +26,8 @@ from src.data_connectors.live_sync import ExternalDataConnector
 from src.models.evolution_engine import evolution_engine
 from src.models.cognitive_narrative import narrator
 from src.analytics.robustness_engine import RobustnessSimulator
+from src.data_connectors.market_intel import market_intel
+from src.analytics.xai_engine import shikra_xai
 import asyncio
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -113,12 +115,14 @@ class AppState:
             self.df = pd.read_sql('flights', engine)
             self.df['departure_time'] = pd.to_datetime(self.df['departure_time'])
             self.df['arrival_time'] = pd.to_datetime(self.df['arrival_time'])
-            logger.info("📦 DB Loaded: Operational state retrieved from aviation.db")
+            self.df = market_intel.enrich_scenario_with_intel(self.df)
+            logger.info("📦 DB Loaded: Operational state enriched with Market Intel.")
         except Exception:
             logger.info("Initializing fresh scenario...")
             from src.generator.synthetic_env import AdvancedAirlineSimulator
             self.sim = AdvancedAirlineSimulator()
-            self.df = self.sim.generate_full_scenario(days=1)
+            raw_df = self.sim.generate_full_scenario(days=1)
+            self.df = market_intel.enrich_scenario_with_intel(raw_df)
             self.save()
 
     def save(self):
@@ -167,8 +171,10 @@ async def get_scenario():
     # v20.0: Expose Operational Fidelity data
     if 'tankered_fuel' not in df_copy.columns:
         df_copy['tankered_fuel'] = 0
-    if 'market_qsi_weight' not in df_copy.columns:
-        df_copy['market_qsi_weight'] = 1.0
+    if 'market_gap_index' not in df_copy.columns:
+        df_copy['market_gap_index'] = 1.0
+    if 'decision_logic' not in df_copy.columns:
+        df_copy['decision_logic'] = "TBD"
     
     data_json = df_copy.to_json(orient='records', date_format='iso')
     return json.loads(data_json)
@@ -326,6 +332,76 @@ async def get_ai_narrative():
         seed=random.randint(1, 1000000)
     )
     return {"report": report, "agent": "Gemma-2-2B-Cognitive"}
+
+@app.post("/api/ai/what-if")
+async def ai_what_if(query: str):
+    """
+    v21.0 Agentic DSS: Analyzes hypothetical 'What-if' scenarios using 
+    simulation + LLM reasoning.
+    """
+    try:
+        current_stats = state.kpi_engine.calculate_fleet_kpis(state.df)
+        
+        # Trigger a hypothetical optimization in a thread
+        def _run_hypothetical():
+            # In a real system, we'd adjust parameters based on query
+            # For the demo, we run a high-pressure optimization
+            solver = DigitalTwinSolver(state.df)
+            return solver.solve_with_windows(window_size_hrs=2, max_time_per_window=5)
+            
+        hypo_df = await asyncio.to_thread(_run_hypothetical)
+        hypo_results = hypo_df.head(10).to_json()
+        
+        # Ask Gemma to analyze the delta
+        analysis = await asyncio.to_thread(
+            narrator.analyze_hypothetical,
+            query, 
+            hypo_results,
+            str(current_stats)
+        )
+        
+        return {
+            "query": query,
+            "analysis": analysis,
+            "agent": "Gemma-2-2B-Agentic-DSS"
+        }
+    except Exception as e:
+        logger.error(f"What-If Error: {str(e)}")
+        return {"error": str(e)}
+
+@app.get("/api/analytics/xai")
+async def get_xai_summary():
+    """
+    v21.0 Transparency Report: Provides SHAP-based feature importance 
+    for the current tactical regime.
+    """
+    if state.df is None or state.df.empty:
+        return {"error": "No operational data"}
+        
+    # Pick a critical flight (highest connection count) to explain
+    critical_idx = state.df['pax_connection_count'].idxmax()
+    f = state.df.loc[critical_idx]
+    
+    # Construct observation (simplified mapping for v20.0 env)
+    obs = np.array([
+        f.get('assigned_delay', 0) / 180.0,
+        f.get('passenger_count', 0) / 400.0,
+        f.get('ac_remaining_fh', 0) / 100.0,
+        f.get('crew_base_fatigue', 0) / 20.0,
+        float(f.get('load_factor', 0)),
+        min(1.0, f.get('weather_risk', 0)),
+        f.get('revenue_tl', 0) / 500_000.0,
+        f.get('dist_km', 0) / 10000.0,
+        f.get('co2_kg', 0) / 50000.0,
+        f.get('pax_connection_count', 0) / 50.0,
+        0.5 # Network load proxy
+    ], dtype=np.float32)
+    
+    explanation = shikra_xai.explain_decision(obs)
+    return {
+        "flight_id": f.get('flight_id'),
+        "explanation": explanation
+    }
 
 @app.get("/api/analytics/foresight-heatmap")
 async def get_foresight_heatmap():

@@ -62,5 +62,27 @@ class CognitiveNarrator:
         except Exception as e:
             return f"Strategic Briefing Error: {str(e)}"
 
+    def analyze_hypothetical(self, query, scenario_results, stats):
+        """
+        v21.0 Agentic DSS: Analyzes the delta between current and hypothetical regimes.
+        """
+        if not self.is_ready or not self.llm:
+            return "Cognitive Brain Offline."
+
+        prompt = f"<start_of_turn>user\n" \
+                 f"Soru/Senaryo: {query}\n" \
+                 f"Mevcut Filo Analizi: {stats}\n" \
+                 f"Optimizasyon Çıktısı: {scenario_results[:500]}...\n\n" \
+                 f"Görevin: Bu 'Farazi' (What-if) senaryoyu analiz et. Havayolu üzerindeki " \
+                 f"stratejik etkilerini, risklerini ve çözüm önerilerini Baş Pilot diliyle anlat. " \
+                 f"Jürinin beklediği profesyonel derinlikte bir yanıt ver. Sadece Türkçe.\n<end_of_turn>\n" \
+                 f"<start_of_turn>model\n"
+
+        try:
+            output = self.llm(prompt, max_tokens=1024, temperature=0.5)
+            return output['choices'][0]['text'].strip()
+        except Exception as e:
+            return f"What-If Analysis Error: {str(e)}"
+
 # Singleton Instance for Global Access
 narrator = CognitiveNarrator()

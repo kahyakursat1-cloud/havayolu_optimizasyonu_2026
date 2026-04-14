@@ -167,10 +167,24 @@ class DigitalTwinSolver:
             rem_fh_total = int(self.flights[self.flights['aircraft_id'] == a]['ac_remaining_fh'].iloc[0] * 0.8 * 60)
             model.Add(total_block_time <= rem_fh_total)
 
-        # Crew Duty
-        for f1, f2 in crew_conflicting_pairs:
-            for k in K:
-                model.Add(y[f1, k] + y[f2, k] <= 1)
+        # v21.0 Integrated Crew Continuity (Holy Grail Pillar)
+        # Ensuring crew stay with their assigned sequence and respect terminal connections.
+        for k in K:
+            # Get sorted flights for this crew index to analyze potential pairings
+            for i, f1 in enumerate(F):
+                for f2 in F[i+1:]:
+                    # Check if flight f2 starts before f1 ends + 60 mins rest
+                    # If they are in conflict, they cannot both be assigned to crew k
+                    if not self._check_time_feasibility_v16(f1, f2, crew_mode=True):
+                         model.Add(y[f1, k] + y[f2, k] <= 1)
+                    
+                    # Connection Constraint: Crew k can only do f2 after f1 if f2.origin == f1.dest
+                    # (Unless a ferry/repositioning gap of 3 hours is provided)
+                    if self.flights.loc[f1, 'destination'] != self.flights.loc[f2, 'origin']:
+                        # Calculate gap
+                        gap = (self.flights.loc[f2, 'departure_time'] - self.flights.loc[f1, 'arrival_time']).total_seconds() / 3600
+                        if gap < 6: # Need minimum 6 hours for regional repositioning
+                            model.Add(y[f1, k] + y[f2, k] <= 1)
 
         for k in K:
             is_crew_active = model.NewBoolVar(f'is_active_{k}')
@@ -184,6 +198,7 @@ class DigitalTwinSolver:
         fuel_costs = []
         delay_penalty = []
         carbon_penalty = []
+        corsia_tax = [] # v21.0 CORSIA Green-Opt Compliance
         cqi_bonus = [] # Connection Quality Index (v20.0: QSI Driven)
         tankering_savings = []
         weight_penalty_co2 = []
@@ -199,8 +214,13 @@ class DigitalTwinSolver:
             
             # v20.0 Strategic Quality (QSI): Weight by commercial preference
             qsi_weight = float(self.flights.loc[f, 'market_qsi_weight'])
-            # Bonus for high QSI flights that are NOT delayed
-            cqi_bonus.append(active * int(lf * qsi_weight * 10000) - d[f] * pax_conn * 200)
+            
+            # v20.0 Market Intel: Prioritize routes with low competitor share (high gap)
+            market_gap = float(self.flights.loc[f, 'market_gap_index']) if 'market_gap_index' in self.flights.columns else 1.0
+            yield_quality = float(self.flights.loc[f, 'yield_quality_index']) if 'yield_quality_index' in self.flights.columns else 1.0
+            
+            # Bonus for high QSI flights that are NOT delayed, amplified by market gap opportunity
+            cqi_bonus.append(active * int(lf * qsi_weight * market_gap * yield_quality * 12000) - d[f] * pax_conn * 200)
 
             # v20.0: Fuel Tankering Logic
             # Extra weight burns more fuel (~3% of extra weight per 1000km)
@@ -215,12 +235,19 @@ class DigitalTwinSolver:
             co2_emitted = active * base_co2 - s[f] * (base_co2 * 8 // 10) + weight_penalty_co2[-1]
             carbon_penalty.append(co2_emitted * 20)
             
+            # v21.0 CORSIA: Tax on emissions above 1.5t (1500kg) per leg
+            allowance = 1500 
+            overage = model.NewIntVar(0, 10000, f'over_{f}')
+            model.AddMaxEquality(overage, [0, co2_emitted - allowance])
+            corsia_tax.append(overage * 5) # 5 TL per kg overage
+            
         model.Maximize(
             sum(revenue) + sum(cqi_bonus) + sum(tankering_savings)
             - sum(op_costs) 
             - sum(fuel_costs) 
             - sum(delay_penalty) 
             - sum(carbon_penalty)
+            - sum(corsia_tax)
         )
 
         # 5. SOLVE
@@ -337,6 +364,23 @@ class DigitalTwinSolver:
         res['assigned_delay'] = [solver.Value(d[f]) for f in self.flights.index]
         res['saf_usage'] = [solver.Value(s[f]) for f in self.flights.index]
         res['tankered_fuel'] = [solver.Value(t[f]) for f in self.flights.index]
+
+        # v21.0 Decision Reasoning (XAI Layer)
+        reasons = []
+        for f in self.flights.index:
+            if solver.Value(z[f]) == 1:
+                reasons.append("Canceled: Heavy operational/fatigue conflict.")
+                continue
+                
+            active_reasons = []
+            if solver.Value(s[f]) > 50: active_reasons.append("ESG Priority (High SAF)")
+            if solver.Value(t[f]) > 1000: active_reasons.append(f"Fuel Saving ({solver.Value(t[f])}kg Tankered)")
+            if self.flights.loc[f, 'pax_connection_count'] > 30: active_reasons.append("Strategic Connection Hold")
+            if float(self.flights.loc[f, 'market_gap_index']) > 0.8: active_reasons.append("Market Share Shield")
+            
+            reasons.append(" | ".join(active_reasons) if active_reasons else "Optimized Baseline")
+            
+        res['decision_logic'] = reasons
 
         assigned_acs = []
         for f in self.flights.index:
