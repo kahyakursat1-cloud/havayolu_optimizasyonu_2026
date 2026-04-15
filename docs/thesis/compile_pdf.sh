@@ -15,7 +15,8 @@ WORK_DIR="$(mktemp -d)"
 
 echo "==> Tez dizini: $THESIS_DIR"
 echo "==> Görseller üretiliyor..."
-python3 "$IMG_DIR/gen_figures.py"
+VENV_PY="$(dirname "$(dirname "$THESIS_DIR")")/src/.venv/bin/python3"
+[ -x "$VENV_PY" ] && "$VENV_PY" "$IMG_DIR/gen_figures.py" || python3 "$IMG_DIR/gen_figures.py"
 
 # ---------- YAML metadata (numbersections kapalı — başlıklarda zaten numara var) ----------
 cat > "$WORK_DIR/metadata.yaml" << 'YAML'
