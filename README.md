@@ -1,67 +1,49 @@
-# Aviation Singularity OS
+# ✈️ Aviation Singularity v27.0
+### The Sovereign Tactical Airline OS for TEKNOFEST 2026
 
-TEKNOFEST 2026 için geliştirilen bu proje, havayolu operasyonlarını sentetik veri üzerinde optimize eden, sonucu FastAPI tabanlı bir API ve ürünleşmiş web arayüzü üzerinden sunan bir karar destek sistemidir.
+Aviation Singularity is an advanced Digital Twin and Tactical Optimization engine designed for resilient airline operations. It combines MILP, Quantum-Inspired GA, and Neuro-Evolutionary agents to solve complex disruption scenarios in seconds.
 
-## Ürün Ne Yapıyor
-- Sentetik operasyon senaryosu üretir.
-- CP-SAT tabanlı optimizasyon ile uçuş atama, gecikme ve iptal kararları üretir.
-- KPI, forecast, stress test ve live-sync benzeri operasyon yüzeyleri sağlar.
-- Uçuş bazında `decision_reason` üretir ve kararların nedenini API ile arayüzde görünür kılar.
-- 2D/3D dijital ikiz arayüzünde filtrelenebilir operasyon görünümü sunar.
+## 🚀 Key Features (v27.0 Roadmap Complete)
 
-## Aktif Mimari
-- Backend: FastAPI, SQLite, Prometheus metriği, rate limit, websocket güncellemesi
-- Optimization: OR-Tools CP-SAT, fatigue-aware ve slot-pressure-aware planlama
-- Analytics: KPI, forecast, foresight heatmap, federated/trust/energy yardımcı modülleri
-- Frontend: FastAPI tarafından servis edilen statik web UI, Three.js, MapLibre, Chart.js
+- **Quantum Tactical Resolver**: Hybrid GA/MILP engine with EASA-compliant crew and maintenance constraints.
+- **Neural Enlightenment**: Cognitive operational briefings provided by a locally hosted Gemma-2B LLM.
+- **Tactical Weather Telemetry**: Real-time NOAA METAR integration with industrial-grade circuit breakers.
+- **Industrial Observability**: Full Prometheus, Grafana, and Loki stack for operational transparency.
+- **Sovereign Security**: JWT-based RBAC with persistent PostgreSQL audit logging.
+- **Deployment Hygiene**: Automatic TLS via Caddy and automated nightly database backups.
 
-## Son Geliştirmeler
-- Eski Streamlit/dashboard hattı ve kullanılmayan benchmark/verify dosyaları temizlendi.
-- Solver tarafına saatlik havalimanı kapasite baskısı ve gate çakışma mantığı eklendi.
-- Optimize sonuçlarına `decision_reason`, `slot_pressure_flag` ve `decision_summary` eklendi.
-- `/api/optimizer/explanations` endpointi açıldı.
-- Arayüzde karar kartı filtreleri, açıklama paneli, otomatik harita odaklama ve boş durum yönetimi eklendi.
+## 🛠️ Tech Stack
 
-## Çalıştırma
-Projede aktif çalışma ortamı `src/.venv` içindedir.
+- **Backend**: Python 3.12 (FastAPI, SQLAlchemy, Pydantic)
+- **Database**: PostgreSQL 16 (Primary) / Redis 7 (Caching)
+- **Monitoring**: Prometheus, Grafana, Loki, Promtail
+- **Frontend**: Vanilla JS (Three.js, MapLibre GL, TailwindCSS)
+- **Proxy**: Caddy (Automatic HTTPS)
 
-```bash
-make run
-```
+## 📦 Getting Started (Production)
 
-Ardından:
-- Web UI: `http://localhost:8501`
-- Health: `GET /health`
-- KPI: `GET /api/analytics/kpi`
-- Optimize: `POST /api/optimize`
-- Explanations: `GET /api/optimizer/explanations`
-- Model Benchmark: `GET /api/analytics/model-benchmark`
+1. **Clone & Setup**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your credentials
+   ```
 
-## Test
-```bash
-make test
-```
+2. **Launch with Productive Hygiene**:
+   ```bash
+   ./deploy/prod_up.sh
+   ```
 
-## Veri Uretimi
-```bash
-make data
-```
+3. **Access**:
+   - **Dashboard**: `http://localhost:80` (or your domain)
+   - **Grafana**: `http://localhost:3000` (User: admin / Pass: admin)
+   - **Prometheus**: `http://localhost:9090`
 
-## Benchmark
-```bash
-make benchmark
-```
+## ⌨️ Tactical Shortcuts
 
-## Docker
-```bash
-make docker-up
-```
+- `R`: **Resolve** - Trigger an optimization cycle.
+- `E`: **Export** - Download the Tactical PDF Briefing.
+- `/`: **Foresight** - Toggle Predictive Heatmap Analysis.
+- `B`: **Sidebar** - Collapse/Expand Tactical Monitoring Panel.
 
-Production icin:
-- `API_KEY` doldur.
-- Gerekirse `DATABASE_URL` ile Postgres bagla.
-- `ALLOWED_ORIGINS` degerini acikca sinirla.
-
-## Notlar
-- `assets/models/gemma-2-2b-it-Q4_K_M.gguf` varsa AI briefing yerel model ile çalışır; yoksa güvenli fallback döner.
-- Live-sync ve narrative yüzeylerinde gerçek sistem yerine demo/simülasyon fallback’leri vardır.
+---
+*Built for the future of resilient aviation. (c) 2026 Skylogic Dynamics.*

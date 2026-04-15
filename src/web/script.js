@@ -8,11 +8,52 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
     return false;
 };
 
+// --- UX HELPERS ---
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.style.borderLeft = type === 'error' ? '4px solid #f43f5e' : '4px solid #38bdf8';
+    toast.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px;">
+            <i data-lucide="${type === 'error' ? 'alert-triangle' : 'info'}" style="width:16px; height:16px;"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    container.appendChild(toast);
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+function toggleLoading(active) {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        if (active) overlay.classList.add('active');
+        else overlay.classList.remove('active');
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
+    if (sidebar) {
+        sidebar.classList.toggle('sidebar-collapsed');
+        logAction(sidebar.classList.contains('sidebar-collapsed') ? "[UI] Sidebar Collapsed." : "[UI] Sidebar Expanded.");
+    }
+}
+
 // --- State Management ---
 let fleetData = [];
 let trajectoryChart;
 let causalChart;
 let viewMode = '2D'; // '2D' or '3D'
+let authToken = localStorage.getItem('aviation_auth_token');
+let currentUser = null;
 
 // v32.0: Mapping Constants for MapLibre (Mercator)
 let map;
@@ -243,18 +284,109 @@ async function updateForesightHeatmap() {
     }
 }
 
+// --- Authentication ---
+window.login = async function() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('login-error');
+    
+    errorEl.classList.add('hidden');
+    
+    try {
+        const formData = new URLSearchParams();
+        formData.append('username', email);
+        formData.append('password', password);
+        
+        const response = await fetch(`${API_BASE}/auth/jwt/login`, {
+            method: 'POST',
+            body: formData,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        
+        if (!response.ok) throw new Error('Invalid credentials');
+        
+        const data = await response.json();
+        authToken = data.access_token;
+        localStorage.setItem('aviation_auth_token', authToken);
+        
+        await checkAuthStatus();
+        logAction(`[AUTH] Neural Link Established. Welcome, ${currentUser?.full_name || 'Operator'}.`);
+    } catch (err) {
+        console.error("Login failed:", err);
+        errorEl.classList.remove('hidden');
+        logAction("[AUTH] Neural Link Failure. Verify credentials.");
+    }
+}
+
+window.logout = function() {
+    authToken = null;
+    currentUser = null;
+    localStorage.removeItem('aviation_auth_token');
+    document.getElementById('auth-overlay').classList.remove('hidden');
+    document.getElementById('user-profile-bar').classList.add('hidden');
+    logAction("[AUTH] Neural Link Terminated. Standby.");
+}
+
+async function checkAuthStatus() {
+    if (!authToken) {
+        document.getElementById('auth-overlay').classList.remove('hidden');
+        return false;
+    }
+    
+    try {
+        const response = await authFetch(`${API_BASE}/auth/me`);
+        if (!response.ok) throw new Error('Token expired');
+        
+        currentUser = await response.json();
+        document.getElementById('auth-overlay').classList.add('hidden');
+        document.getElementById('user-profile-bar').classList.remove('hidden');
+        document.getElementById('user-name-display').innerText = currentUser.full_name || 'Operator';
+        document.getElementById('user-role-display').innerText = currentUser.role || 'Viewer';
+        
+        // Initial data load after auth
+        await fetchScenario();
+        setInterval(updateEvolutionStats, 5000);
+        setInterval(updateAIBriefing, 10000);
+        
+        return true;
+    } catch (err) {
+        console.warn("Auth check failed:", err);
+        logout();
+        return false;
+    }
+}
+
+async function authFetch(url, options = {}) {
+    if (!options.headers) options.headers = {};
+    if (authToken) {
+        options.headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    return fetch(url, options);
+}
+
 // --- API Calls ---
 async function fetchScenario() {
+    toggleLoading(true);
     try {
-        const response = await fetch(`${API_BASE}/scenario`);
-        if (!response.ok) throw new Error("API Offline");
+        const response = await authFetch(`${API_BASE}/scenario`);
+        if (!response.ok) throw new Error("API Offline or Unauthorized");
         fleetData = await response.json();
+        
+        // ROADMAP PHASE 6: Onboarding Check
+        if (fleetData.length === 0) {
+            showToast("Operational Scenario is EMPTY. Initializing tactical simulation...", "info");
+            await syncLive(); // Use syncLive to bootstrap data
+        }
+
         await fetchOptimizerExplanations();
         updateUI();
         fetchKPIs();
         if (viewMode === '3D') update3DMarkers();
     } catch (err) {
         console.error("Fetch Scenario Failed:", err);
+        showToast("Telemetry Link Failure: Check Neural Connectivity", "error");
+    } finally {
+        toggleLoading(false);
     }
 }
 
@@ -499,7 +631,7 @@ function collectAIEvidence(flight) {
 // v22.2: Brain Stats Polling Engine
 async function updateEvolutionStats() {
     try {
-        const response = await fetch(`${API_BASE}/evolution/summary`);
+        const response = await authFetch(`${API_BASE}/evolution/summary`);
         if (response.ok) {
             const stats = await response.json();
             document.getElementById('evo-xp').innerText = stats.experience_points;
@@ -514,18 +646,18 @@ async function updateEvolutionStats() {
 }
 
 async function runOptimize() {
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay) overlay.classList.remove('hidden');
+    toggleLoading(true);
     
     // v17.1: Frontend Safeguard Timeout (40s)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
         controller.abort();
         logAction("OPTIMIZATION TIMEOUT: Complex plan restored. Try a smaller window.");
+        showToast("Optimization Timeout (60s)", "error");
     }, 60000); 
 
     try {
-        const response = await fetch(`${API_BASE}/optimize`, { 
+        const response = await authFetch(`${API_BASE}/optimize`, { 
             method: 'POST',
             signal: controller.signal
         });
@@ -536,11 +668,13 @@ async function runOptimize() {
 
         if (result.status === "success") {
             logAction(`Success: ${result.message}`);
+            showToast("✅ Tactical Recovery Successful", "success");
             if (result.decision_summary?.top_reasons?.length) {
                 logAction(`Primary driver: ${result.decision_summary.top_reasons[0].reason}`);
             }
         } else if (result.status === "partial_success") {
             logAction(`Alert: ${result.message}`);
+            showToast("⚠️ Partial Optimization Achieved", "warn");
         }
         
     } catch (err) {
@@ -549,9 +683,10 @@ async function runOptimize() {
         } else {
             console.error("Optimization Failed:", err);
             logAction("Critical Error during optimization. Check network.");
+            showToast("Solver Process Failure", "error");
         }
     } finally {
-        if (overlay) overlay.classList.add('hidden');
+        toggleLoading(false);
     }
 }
 
@@ -570,7 +705,7 @@ async function runAIOptimize() {
 async function triggerStressTest() {
     logAction("SHOCK INJECTED: Massive Hub Delay at IST Triggered.");
     try {
-        const response = await fetch(`${API_BASE}/stress-test`, { method: 'POST' });
+        const response = await authFetch(`${API_BASE}/stress-test`, { method: 'POST' });
         const badge = document.getElementById('recovery-badge');
         if (badge) badge.classList.remove('hidden');
         await fetchScenario();
@@ -952,7 +1087,7 @@ function initCharts() {
 
 async function fetchForecast() {
     try {
-        const response = await fetch(`${API_BASE}/analytics/forecast`);
+        const response = await authFetch(`${API_BASE}/analytics/forecast`);
         if (!response.ok) return;
         const data = await response.json();
         updateForecastUI(data);
@@ -961,7 +1096,7 @@ async function fetchForecast() {
 
 async function fetchModelBenchmark() {
     try {
-        const response = await fetch(`${API_BASE}/analytics/model-benchmark`);
+        const response = await authFetch(`${API_BASE}/analytics/model-benchmark`);
         if (!response.ok) return;
         benchmarkSummary = await response.json();
         updateBenchmarkUI(benchmarkSummary);
@@ -1013,12 +1148,21 @@ function updateBenchmarkUI(payload) {
 }
 
 // --- Start System ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initCharts();
-    fetchScenario();
+    
+    // v27.0: Auth-driven initialization
+    const authenticated = await checkAuthStatus();
+    if (!authenticated) {
+        if (window.lucide) lucide.createIcons();
+        return; 
+    }
+
+    // (The following block is already partially inside checkAuthStatus, 
+    // but we can refine the startup sequence here)
     fetchForecast();
     fetchModelBenchmark();
-    updateAIBriefing(); // v34.0: Initial Neural Uplink
+    updateAIBriefing(); 
     
     // v35.5: WebSocket Real-Time Integration
     const wsProto = location.protocol === "https:" ? "wss:" : "ws:";
@@ -1036,6 +1180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Keep a slow fallback heartbeat just in case
     setInterval(() => {
+        if (!authToken) return;
         fetchScenario();
         fetchForecast();
         fetchModelBenchmark();
@@ -1196,5 +1341,34 @@ document.getElementById('three-container').addEventListener('click', (e) => {
     } else {
         closeFlightPanel();
     }
-});
+    });
+
+    // v27.0: Global Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Only trigger if not in an input field
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+        switch(e.key.toLowerCase()) {
+            case 'r': // Recover/Optimize
+                e.preventDefault();
+                showToast("Tactical Resolve Initiated via Shortcut (R)");
+                runOptimize();
+                break;
+            case 'e': // Export PDF
+                e.preventDefault();
+                showToast("Exporting Tactical Briefing (E)");
+                downloadDecisionReportPdf();
+                break;
+            case '/': // Toggle Foresight
+                e.preventDefault();
+                toggleForesight();
+                break;
+            case 'b': // Toggle Sidebar
+                e.preventDefault();
+                toggleSidebar();
+                break;
+        }
+    });
+
+    if (window.lucide) lucide.createIcons();
 });
