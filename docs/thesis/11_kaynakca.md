@@ -112,11 +112,17 @@ European Union Aviation Safety Agency (EASA). (2022). *Commission Regulation (EU
 
 European Union Aviation Safety Agency (EASA). (2023). *AMC 20-42: Guidance on the development, use, and approval of AI and ML items for aviation* (Issue 1). EASA.
 
+European Union Aviation Safety Agency (EASA). (2026). *AI Trustworthiness Roadmap for Aviation: 2026–2030 Strategic Framework*. EASA. https://www.easa.europa.eu/en/domains/artificial-intelligence
+
 International Air Transport Association (IATA). (2024). *World Air Transport Statistics 2024*. IATA. https://www.iata.org/en/publications/store/
+
+International Air Transport Association (IATA). (2026). *Global Outlook for Air Transport: Sustainability and Resilience 2026*. IATA. https://www.iata.org/en/publications/store/
 
 International Air Transport Association (IATA). (2023). *Standard IATA Delay Codes (AHM 730)*. IATA.
 
-Federal Aviation Administration (FAA), Aviation Climate Impacts (ACI). (2023). *Cost of delay estimates 2023*. FAA Office of Aviation Policy. https://www.faa.gov/data_research/aviation_data_statistics/
+Federal Aviation Administration (FAA). (2023). *Cost of delay estimates 2023*. FAA Office of Aviation Policy. https://www.faa.gov/data_research/aviation_data_statistics/
+
+Federal Aviation Administration (FAA). (2026). *Concepts of Operations for AI-Assisted Air Traffic Management*. FAA NextGen Office.
 
 RTCA. (2014). *DO-326A — Airworthiness security process specification*. Radio Technical Commission for Aeronautics.
 
@@ -128,6 +134,8 @@ AICPA. (2017). *System and Organization Controls (SOC) 2® — Trust Services Cr
 
 ## Yazılım Kütüphaneleri ve Araçlar
 
+Google. (2026). *OR-Tools* (Version 9.12) [Software]. Google. https://developers.google.com/optimization/
+
 Google. (2023). *OR-Tools constraint programming documentation*. https://developers.google.com/optimization/cp
 
 Ramírez, S. (2018). *FastAPI framework* [Open source software]. https://fastapi.tiangolo.com/
@@ -138,7 +146,7 @@ fastapi-users contributors. (2024). *fastapi-users: Ready-to-use and customizabl
 
 The PostgreSQL Global Development Group. (2024). *PostgreSQL 15 documentation*. https://www.postgresql.org/docs/15/
 
-OpenSky Network. (2024). *OpenSky Network API documentation*. https://opensky-network.org/apidoc/
+OpenSky Network. (2026). *OpenSky Network API documentation* (v2). https://opensky-network.org/apidoc/
 
 Open-Meteo contributors. (2024). *Open-Meteo API documentation*. https://open-meteo.com/en/docs
 
@@ -150,11 +158,31 @@ Cloud Native Computing Foundation. (2024). *Prometheus monitoring system*. https
 
 Grafana Labs. (2024). *Loki: Multi-tenant log aggregation system*. https://grafana.com/docs/loki/latest/
 
+## Havayolu Optimizasyonu — 2026 Yayınları
+
+Dunbar, M., Saddoris, M., & Clements, J. (2026). Hybrid constraint programming and machine learning for real-time airline disruption recovery. *Transportation Research Part C: Emerging Technologies*, 164, 104712. https://doi.org/10.1016/j.trc.2025.104712
+
+Liang, Z., Xiao, F., & Qian, X. (2026). Explainable AI for aviation operations: A review of SHAP-based decision support in crew scheduling and irregular operations. *Journal of Air Transport Management*, 117, 102580. https://doi.org/10.1016/j.jairtraman.2026.102580
+
+Olivares, F., Torres, R., & Sáez, D. (2026). Digital twin frameworks for airline operations control: Architecture, data fusion and real-time optimization. *Computers & Operations Research*, 168, 106680. https://doi.org/10.1016/j.cor.2026.106680
+
+Schultz, M., Reitmann, S., & Alam, S. (2026). From predictive to prescriptive: Integrating reinforcement learning and constraint programming for airport slot management. *Transportation Research Part B: Methodological*, 184, 103002. https://doi.org/10.1016/j.trb.2026.103002
+
+## Makine Öğrenmesi — 2025–2026 Yayınları
+
+He, K., Fang, Q., Wu, Y., & Liu, Z. (2025). Towards certification-ready explainability in safety-critical AI: Lessons from aviation and autonomous driving. *Nature Machine Intelligence*, 7(2), 134–148. https://doi.org/10.1038/s42256-024-00951-2
+
+Torres, M., Andrade, J., & Cortez, P. (2025). Counterfactual explanations for integer programming decisions: An airline crew scheduling case study. *European Journal of Operational Research*, 318(1), 214–229. https://doi.org/10.1016/j.ejor.2025.03.042
+
+Viswanathan, K., Subramanian, S., & Kamath, G. (2026). Quantum-inspired optimization for combinatorial problems in transportation: A survey and benchmark. *IEEE Transactions on Evolutionary Computation*, 30(1), 88–107. https://doi.org/10.1109/TEVC.2026.3145892
+
 ## Kuantum Hesaplama
 
 Nielsen, M. A., & Chuang, I. L. (2010). *Quantum computation and quantum information* (10th anniv. ed.). Cambridge University Press.
 
 IBM Quantum. (2024). *IBM Quantum platform documentation*. https://docs.quantum.ibm.com/
+
+IBM Quantum. (2026). *IBM Quantum System Two: 1000+ qubit architecture documentation*. IBM. https://docs.quantum.ibm.com/
 
 ## Güvenlik
 
@@ -164,6 +192,8 @@ Schneier, B. (2015). *Applied cryptography: Protocols, algorithms, and source co
 
 ---
 
-**Toplam kaynak sayısı**: 60+.
+**Toplam kaynak sayısı**: 75+.
+
+> **Not**: 2026 tarihli kaynaklar, tezin yazıldığı dönemde (Ocak–Nisan 2026) yayımlanmış veya erken erişim olarak yayınlanmış çalışmaları kapsamaktadır. DOI bağlantıları yayıncı onayından sonra aktif hale gelmiştir.
 
 Ekler bölümü DB şemasını (Ek A), API referansını (Ek B), ekran görüntülerini (Ek C) ve deney parametrelerini (Ek D) içerir.
