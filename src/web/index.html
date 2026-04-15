@@ -151,6 +151,12 @@
             <button onclick="syncLive()" class="orbitron" style="width:100%; padding:0.75rem; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:#10b981; border-radius:0.5rem; font-size:0.7rem; cursor:pointer; transition:all 0.2s; font-weight:bold;">LIVE SYNC (API)</button>
         </div>
 
+        <div style="margin-bottom: 2rem;">
+            <p style="font-size:0.65rem; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:1rem;">REPORTING</p>
+            <button onclick="downloadFilteredCsv()" class="orbitron" style="width:100%; padding:0.75rem; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.28); color:#38bdf8; border-radius:0.5rem; font-size:0.68rem; cursor:pointer; transition:all 0.2s; font-weight:bold; margin-bottom:0.5rem;">EXPORT FILTERED CSV</button>
+            <button onclick="downloadDecisionReport()" class="orbitron" style="width:100%; padding:0.75rem; background:rgba(129,140,248,0.1); border:1px solid rgba(129,140,248,0.3); color:#818cf8; border-radius:0.5rem; font-size:0.68rem; cursor:pointer; transition:all 0.2s; font-weight:bold;">DOWNLOAD DECISION REPORT</button>
+        </div>
+
         <!-- v22.2: Neural Evolution Monitor -->
         <div style="margin-bottom: 2rem;">
             <p style="font-size:0.65rem; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:1rem;">NEURAL EVOLUTION</p>
@@ -228,6 +234,39 @@
             </div>
         </header>
 
+        <section style="display:flex; gap:1rem; width:100%; z-index:10;">
+            <div id="filter-canceled" class="glass" onclick="setDecisionFilter('canceled')" style="flex:1; padding:1rem 1.25rem; cursor:pointer;">
+                <p style="color:#64748b; font-size:0.6rem; margin:0 0 0.25rem 0; font-weight:bold;">TACTICAL CANCELLATIONS</p>
+                <h3 id="kpi-canceled" class="orbitron" style="color:#f43f5e; margin:0; font-size:1.5rem;">0</h3>
+            </div>
+            <div id="filter-delayed" class="glass" onclick="setDecisionFilter('delayed')" style="flex:1; padding:1rem 1.25rem; cursor:pointer;">
+                <p style="color:#64748b; font-size:0.6rem; margin:0 0 0.25rem 0; font-weight:bold;">DELAYED FLIGHTS</p>
+                <h3 id="kpi-delayed" class="orbitron" style="color:#facc15; margin:0; font-size:1.5rem;">0</h3>
+            </div>
+            <div id="filter-swaps" class="glass" onclick="setDecisionFilter('swaps')" style="flex:1; padding:1rem 1.25rem; cursor:pointer;">
+                <p style="color:#64748b; font-size:0.6rem; margin:0 0 0.25rem 0; font-weight:bold;">AIRCRAFT SWAPS</p>
+                <h3 id="kpi-swaps" class="orbitron" style="color:#38bdf8; margin:0; font-size:1.5rem;">0</h3>
+            </div>
+            <div id="filter-pressure" class="glass" onclick="setDecisionFilter('pressure')" style="flex:1.4; padding:1rem 1.25rem; cursor:pointer;">
+                <p style="color:#64748b; font-size:0.6rem; margin:0 0 0.35rem 0; font-weight:bold;">TOP DECISION DRIVER</p>
+                <p id="kpi-top-reason" style="color:#e2e8f0; margin:0; font-size:0.78rem; line-height:1.4;">Awaiting optimization rationale...</p>
+            </div>
+        </section>
+
+        <section style="display:flex; gap:1rem; width:100%; z-index:10; align-items:stretch;">
+            <div class="glass" style="flex:1.4; padding:0.9rem 1.1rem; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <p style="color:#64748b; font-size:0.58rem; margin:0 0 0.2rem 0; font-weight:bold;">ACTIVE FILTER</p>
+                    <p id="active-filter-label" style="margin:0; color:#e2e8f0; font-size:0.8rem;">All flights</p>
+                </div>
+                <button id="clear-filter-btn" onclick="clearDecisionFilter()" class="foresight-btn orbitron hidden" style="padding:0.55rem 0.9rem; font-size:0.58rem;">CLEAR FILTER</button>
+            </div>
+            <div class="glass" style="flex:2; padding:0.9rem 1.1rem;">
+                <p style="color:#64748b; font-size:0.58rem; margin:0 0 0.2rem 0; font-weight:bold;">TACTICAL DECISION SUMMARY</p>
+                <p id="decision-summary-banner" style="margin:0; color:#e2e8f0; font-size:0.8rem; line-height:1.45;">Awaiting optimization run...</p>
+            </div>
+        </section>
+
         <!-- Body: Analyst Analytics Suite -->
         <section style="display: flex !important; flex: 1 !important; gap: 1.5rem !important; min-height: 0 !important; width: 100% !important; z-index:10;">
             <div style="display: flex !important; flex-direction: column !important; width: 65% !important; gap: 1.5rem !important; height: 100% !important;">
@@ -244,6 +283,21 @@
                         <p style="margin:4px 0;">[SYSTEM] Column Generation Heuristic initialized for scale management.</p>
                     </div>
                 </div>
+                <div class="glass" style="flex: 1 !important; padding: 1.5rem; display: flex; flex-direction: column; overflow: hidden; border-top: 1px solid rgba(129,140,248,0.28);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.85rem;">
+                        <h3 class="orbitron" style="font-size:0.75rem; color:#818cf8; margin:0;">AI MODEL BENCHMARK</h3>
+                        <span id="benchmark-best-model" style="font-size:0.62rem; color:#e2e8f0; font-weight:bold;">Awaiting benchmark...</span>
+                    </div>
+                    <p id="benchmark-dataset-meta" style="margin:0 0 0.85rem 0; color:#94a3b8; font-size:0.62rem; line-height:1.5;">Model comparison telemetry initializing.</p>
+                    <div style="flex:1; overflow-y:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:0.65rem; color:#94a3b8;">
+                            <thead style="text-align:left; color:#64748b; border-bottom:1px solid rgba(129,140,248,0.12);">
+                                <tr><th style="padding:4px;">MODEL</th><th style="padding:4px;">F1</th><th style="padding:4px;">AUC</th><th style="padding:4px;">STATE</th></tr>
+                            </thead>
+                            <tbody id="benchmark-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             <div style="display: flex !important; flex-direction: column !important; width: 35% !important; gap: 1.5rem !important; height: 100% !important;">
                 <div class="glass" style="height: 40%; padding: 1.5rem; display: flex; flex-direction: column;">
@@ -255,7 +309,7 @@
                     <div style="flex: 1; overflow-y: auto;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem; color: #94a3b8;">
                             <thead style="text-align:left; color:#475569; border-bottom:1px solid rgba(255,255,255,0.05);">
-                                <tr><th style="padding-bottom:8px;">FLIGHT</th><th style="padding-bottom:8px;">LF%</th><th style="padding-bottom:8px;">ESG</th></tr>
+                                <tr><th style="padding-bottom:8px;">FLIGHT</th><th style="padding-bottom:8px;">LF%</th><th style="padding-bottom:8px;">DECISION</th></tr>
                             </thead>
                             <tbody id="fleet-table-body"></tbody>
                         </table>
@@ -337,6 +391,16 @@
             </button>
             <div style="flex:1.5; background: rgba(14, 165, 233, 0.1); border-left: 3px solid #0ea5e9; padding: 8px; color: #cbd5e1; font-size:10px; display:flex; align-items:center;">
                 Trajectory locked. Interpolating flight vectors.
+            </div>
+        </div>
+
+        <div style="padding: 0 16px 16px 16px;">
+            <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.18); border-radius: 10px; padding: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="color:#818cf8; font-size:10px; font-weight:bold;">DECISION EXPLANATION</span>
+                    <span id="dtl-slot-flag" style="color:#facc15; font-size:10px; font-weight:bold;">NORMAL FLOW</span>
+                </div>
+                <p id="dtl-reason" style="color:#e2e8f0; margin:0; font-size:12px; line-height:1.5;">No explanation available yet.</p>
             </div>
         </div>
     </div>

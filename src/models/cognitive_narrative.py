@@ -1,7 +1,11 @@
 import os
-from llama_cpp import Llama
 import logging
 from datetime import datetime
+
+try:
+    from llama_cpp import Llama
+except Exception:  # pragma: no cover - optional runtime dependency
+    Llama = None
 
 # v34.0: Cognitive Narrative Intelligence (Shikra Intercept)
 # Powering the "Chief Aviation Officer" persona locally
@@ -13,8 +17,10 @@ class CognitiveNarrator:
         self.model_path = model_path
         self.llm = None
         self.is_ready = False
-        
-        if os.path.exists(self.model_path):
+
+        if Llama is None:
+            logger.warning("⚠️ llama_cpp is not available. Briefing disabled.")
+        elif os.path.exists(self.model_path):
             try:
                 # v35.2: Expanded context for longer operational reports
                 self.llm = Llama(

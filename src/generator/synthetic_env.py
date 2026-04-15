@@ -30,8 +30,6 @@ class AdvancedAirlineSimulator:
             # v23.0 Intermodal (Trains)
             'HSR-Train': {'range': 1000, 'fuel': 0, 'capacity': 400, 'op_cost': 1000, 'cat': 'Train', 'co2': 0.0}
         }
-        }
-        }
         
         self.aircraft_pool = {
             f"AC_{i:03d}": {
@@ -71,6 +69,13 @@ class AdvancedAirlineSimulator:
     def _is_hydrogen(self, ac_type):
         return ac_type == "ZeroAvia-H2"
 
+    def _interpolate_position(self, origin, destination, progress_ratio):
+        origin_meta = self.airports[origin]
+        dest_meta = self.airports[destination]
+        lat = origin_meta['lat'] + (dest_meta['lat'] - origin_meta['lat']) * progress_ratio
+        lon = origin_meta['lon'] + (dest_meta['lon'] - origin_meta['lon']) * progress_ratio
+        return lat, lon
+
     def generate_full_scenario(self, days=1):
         """
         🚀 v15.0 "Aviation Excellence" Simulator: 
@@ -98,6 +103,8 @@ class AdvancedAirlineSimulator:
                 origin = random.choice(list(self.airports.keys()))
                 destination = random.choice([a for a in self.airports.keys() if a != origin])
                 dist = self.calculate_distance(origin, destination)
+                origin_meta = self.airports[origin]
+                dest_meta = self.airports[destination]
                 
                 # Demand-Weight Distribution
                 hour = random.choices(range(24), weights=[1,1,1,2,6,10,12,10,8,6,5,5,6,8,10,12,10,8,6,4,3,2,1,1])[0]
@@ -133,11 +140,26 @@ class AdvancedAirlineSimulator:
                 
                 rem_fh = self.aircraft_pool[ac_id]['remaining_fh']
                 crew_id = random.choice(list(self.crew_pool.keys()))
-                
+                progress_ratio = random.uniform(0.15, 0.85)
+                lat, lon = self._interpolate_position(origin, destination, progress_ratio)
+                cruise_velocity = max(220, min(480, int(dist / max(block_time / 60, 0.5))))
+                track = (np.degrees(np.arctan2(
+                    dest_meta['lon'] - origin_meta['lon'],
+                    dest_meta['lat'] - origin_meta['lat']
+                )) + 360.0) % 360.0
+
                 flights.append({
                     'flight_id': f"TK{2000 + len(flights)}",
                     'origin': origin,
                     'destination': destination, 
+                    'origin_lat': origin_meta['lat'],
+                    'origin_lon': origin_meta['lon'],
+                    'dest_lat': dest_meta['lat'],
+                    'dest_lon': dest_meta['lon'],
+                    'lat': lat,
+                    'lon': lon,
+                    'velocity': cruise_velocity,
+                    'track': round(track, 1),
                     'dist_km': dist,
                     'departure_time': departure_time,
                     'arrival_time': arrival_time,
@@ -185,7 +207,13 @@ class AdvancedAirlineSimulator:
         df['is_canceled'] = 0
         df['assigned_delay'] = 0
         df['saf_usage'] = 0.0
-        return df.dropna()
+        # maintenance_reason is None for healthy aircraft; normalize to empty string
+        # so downstream MRO checks don't mistake a "None" sentinel for a real reason.
+        if 'maintenance_reason' in df.columns:
+            df['maintenance_reason'] = df['maintenance_reason'].where(
+                df['maintenance_reason'].notna(), ''
+            )
+        return df
 
     def trigger_disruption(self, df, hub='IST', delay_mins=120):
         """
@@ -195,6 +223,3 @@ class AdvancedAirlineSimulator:
         df.loc[mask, 'assigned_delay'] = delay_mins
         df.loc[mask, 'causal_factor'] = 'Operational Failure'
         return df
-
-        
-        return pd.DataFrame(flights)

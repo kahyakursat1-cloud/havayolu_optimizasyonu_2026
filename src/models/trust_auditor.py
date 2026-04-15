@@ -60,4 +60,3 @@ class AITrustworthinessAuditor:
         }
 
 trust_auditor = AITrustworthinessAuditor()
- village = "ESB"

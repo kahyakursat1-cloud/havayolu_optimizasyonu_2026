@@ -32,6 +32,22 @@ let selectedFlightId = null;
 let flightTrajectoryLine = null;
 
 let lastNarrative = "";
+let decisionSummary = null;
+let explanationMap = {};
+let activeDecisionFilter = 'all';
+let benchmarkSummary = null;
+
+function downloadBlob(content, mimeType, filename) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+}
 
 // v38.0: UI Panel Control
 window.closeFlightPanel = function() {
@@ -55,6 +71,58 @@ window.toggleFollowMode = function() {
         logAction(`[RADAR] Camera lock initiated on ${selectedFlightId}.`);
     } else {
         logAction(`[RADAR] Camera lock released.`);
+    }
+}
+window.setDecisionFilter = function(filterName) {
+    activeDecisionFilter = activeDecisionFilter === filterName ? 'all' : filterName;
+    updateFilterCards();
+    updateUI();
+    if (viewMode === '3D') {
+        update3DMarkers();
+        focusMapOnFilteredFlights();
+    }
+    const label = activeDecisionFilter === 'all' ? 'all flights' : activeDecisionFilter;
+    logAction(`[FILTER] Decision focus set to ${label}.`);
+}
+window.clearDecisionFilter = function() {
+    if (activeDecisionFilter === 'all') return;
+    activeDecisionFilter = 'all';
+    updateFilterCards();
+    updateUI();
+    if (viewMode === '3D') {
+        update3DMarkers();
+        focusMapOnFilteredFlights();
+    }
+    logAction("[FILTER] Decision focus cleared.");
+}
+window.downloadFilteredCsv = async function() {
+    const filterName = activeDecisionFilter || 'all';
+    try {
+        const response = await fetch(`${API_BASE}/export/scenario.csv?filter=${encodeURIComponent(filterName)}`);
+        if (!response.ok) throw new Error('Export failed');
+        const csvText = await response.text();
+        downloadBlob(csvText, 'text/csv;charset=utf-8', `aviation_scenario_${filterName}.csv`);
+        logAction(`[EXPORT] CSV ready for ${filterName} filter.`);
+    } catch (err) {
+        console.error("CSV export failed:", err);
+        logAction("[EXPORT] CSV export failed.");
+    }
+}
+window.downloadDecisionReport = async function() {
+    const filterName = activeDecisionFilter || 'all';
+    try {
+        const response = await fetch(`${API_BASE}/reports/decision-summary?filter=${encodeURIComponent(filterName)}`);
+        if (!response.ok) throw new Error('Report failed');
+        const payload = await response.json();
+        downloadBlob(
+            JSON.stringify(payload, null, 2),
+            'application/json;charset=utf-8',
+            `decision_report_${filterName}.json`
+        );
+        logAction(`[REPORT] Decision report downloaded for ${filterName} filter.`);
+    } catch (err) {
+        console.error("Decision report failed:", err);
+        logAction("[REPORT] Decision report download failed.");
     }
 }
 let isForesightActive = false;
@@ -155,6 +223,7 @@ async function fetchScenario() {
         const response = await fetch(`${API_BASE}/scenario`);
         if (!response.ok) throw new Error("API Offline");
         fleetData = await response.json();
+        await fetchOptimizerExplanations();
         updateUI();
         fetchKPIs();
         if (viewMode === '3D') update3DMarkers();
@@ -170,6 +239,19 @@ async function fetchKPIs() {
         const kpis = await response.json();
         document.getElementById('kpi-plf').innerText = `${kpis.plf}%`;
         document.getElementById('kpi-cqi').innerText = kpis.cqi;
+    } catch (err) {}
+}
+
+async function fetchOptimizerExplanations() {
+    try {
+        const response = await fetch(`${API_BASE}/optimizer/explanations`);
+        if (!response.ok) return;
+        const payload = await response.json();
+        decisionSummary = payload.summary || null;
+        explanationMap = {};
+        (payload.flights || []).forEach(f => {
+            explanationMap[f.flight_id] = f;
+        });
     } catch (err) {}
 }
 
@@ -232,6 +314,98 @@ function createAirplaneMesh(colorHex, emissiveHex, opacityScale = 0.95) {
     group.add(fin);
 
     return group;
+}
+
+function getFilteredFleetData() {
+    switch (activeDecisionFilter) {
+        case 'canceled':
+            return fleetData.filter(f => Number(f.is_canceled) === 1);
+        case 'delayed':
+            return fleetData.filter(f => Number(f.assigned_delay) > 0 && Number(f.is_canceled) !== 1);
+        case 'swaps':
+            return fleetData.filter(f => f.assigned_aircraft && f.assigned_aircraft !== "None" && f.assigned_aircraft !== f.aircraft_id);
+        case 'pressure':
+            return fleetData.filter(f => !!f.slot_pressure_flag);
+        default:
+            return fleetData;
+    }
+}
+
+function getScenarioVisualState(flight) {
+    if (flight.is_canceled) {
+        return { color: 0xf43f5e, status: "CANCELED", pulseSpeed: 3.0, opacity: 0.95 };
+    }
+    if (flight.slot_pressure_flag) {
+        return { color: 0xfacc15, status: "PRESSURE", pulseSpeed: 4.0, opacity: 1.0 };
+    }
+    if (flight.assigned_delay > 0) {
+        return { color: 0xfb923c, status: "DELAYED", pulseSpeed: 2.3, opacity: 0.9 };
+    }
+    return { color: 0x0ea5e9, status: "OPTIMAL", pulseSpeed: 1.2, opacity: 0.85 };
+}
+
+function shortenReason(reason) {
+    if (!reason) return "No reason";
+    const compact = String(reason).replace(/^Cancellation:\s*/i, '').trim();
+    return compact.length > 42 ? `${compact.slice(0, 42)}...` : compact;
+}
+
+function focusMapOnFilteredFlights() {
+    if (!map) return;
+    const flights = getFilteredFleetData();
+    if (!flights.length) return;
+
+    if (flights.length === 1) {
+        map.easeTo({
+            center: [flights[0].lon, flights[0].lat],
+            zoom: 10.5,
+            duration: 900
+        });
+        return;
+    }
+
+    let minLon = Infinity;
+    let minLat = Infinity;
+    let maxLon = -Infinity;
+    let maxLat = -Infinity;
+
+    flights.forEach((f) => {
+        minLon = Math.min(minLon, Number(f.lon));
+        minLat = Math.min(minLat, Number(f.lat));
+        maxLon = Math.max(maxLon, Number(f.lon));
+        maxLat = Math.max(maxLat, Number(f.lat));
+    });
+
+    if (Number.isFinite(minLon) && Number.isFinite(minLat) && Number.isFinite(maxLon) && Number.isFinite(maxLat)) {
+        map.fitBounds(
+            [[minLon, minLat], [maxLon, maxLat]],
+            { padding: 90, duration: 1000, maxZoom: 10.5 }
+        );
+    }
+}
+
+function updateFilterCards() {
+    const filters = ['canceled', 'delayed', 'swaps', 'pressure'];
+    filters.forEach(name => {
+        const card = document.getElementById(`filter-${name}`);
+        if (!card) return;
+        const active = activeDecisionFilter === name;
+        card.style.borderColor = active ? 'rgba(250, 204, 21, 0.65)' : 'rgba(255,255,255,0.08)';
+        card.style.boxShadow = active ? '0 0 0 1px rgba(250,204,21,0.15), 0 0 18px rgba(250,204,21,0.18)' : 'none';
+        card.style.transform = active ? 'translateY(-1px)' : 'translateY(0)';
+    });
+
+    const label = document.getElementById('active-filter-label');
+    const clearBtn = document.getElementById('clear-filter-btn');
+    const filterLabels = {
+        all: 'All flights',
+        canceled: 'Canceled flights only',
+        delayed: 'Delayed flights only',
+        swaps: 'Aircraft swaps only',
+        pressure: 'Slot-pressure flights only'
+    };
+    if (label) label.innerText = filterLabels[activeDecisionFilter] || 'All flights';
+    if (clearBtn) clearBtn.classList.toggle('hidden', activeDecisionFilter === 'all');
 }
 
 // v32.0: Real-Time ADS-B Marker Engine for MapLibre
@@ -336,6 +510,9 @@ async function runOptimize() {
 
         if (result.status === "success") {
             logAction(`Success: ${result.message}`);
+            if (result.decision_summary?.top_reasons?.length) {
+                logAction(`Primary driver: ${result.decision_summary.top_reasons[0].reason}`);
+            }
         } else if (result.status === "partial_success") {
             logAction(`Alert: ${result.message}`);
         }
@@ -551,6 +728,7 @@ function initThreeCustomLayer() {
     // v32.4: Trigger initial data sync as soon as the layer is ready
     setTimeout(() => {
         update3DMarkers();
+        focusMapOnFilteredFlights();
         syncLive();
     }, 500);
 }
@@ -558,6 +736,8 @@ function initThreeCustomLayer() {
 // v32.0: Synchronize Scenario Aircraft markers with MapLibre
 function update3DMarkers() {
     if (!scene || !map || !fleetData) return;
+    const visibleFlights = getFilteredFleetData();
+    const visibleIds = new Set(visibleFlights.map(f => f.flight_id));
 
     // Clear existing static markers
     Object.keys(aircraftMarkers).forEach(id => {
@@ -568,16 +748,15 @@ function update3DMarkers() {
         }
     });
 
-    fleetData.forEach((f) => {
+    visibleFlights.forEach((f) => {
         // v32.5: Accurate Metric Scaling for IST
         const lonOffset = (f.lon - 28.74) * 83500; 
         const latOffset = (f.lat - 41.27) * 111320;
         const alt = 2500; 
 
-        const isDelayed = f.assigned_delay > 0;
-        const color = isDelayed ? 0xf43f5e : 0x0ea5e9; // Cyan for scenario prediction
+        const visual = getScenarioVisualState(f);
         
-        const mesh = createAirplaneMesh(color, color, 0.85);
+        const mesh = createAirplaneMesh(visual.color, visual.color, visual.opacity);
         mesh.position.set(lonOffset, latOffset, alt);
         mesh.rotateX(Math.PI / 2);
         mesh.rotation.z = Math.PI / 4; 
@@ -587,9 +766,11 @@ function update3DMarkers() {
             velocity: 400 + Math.random() * 50, // Approx cruising speed
             alt: alt,
             heading: 45, // Default for scenario
-            status: f.assigned_delay > 0 ? "DELAYED" : "OPTIMAL",
+            status: visual.status,
             baseScale: 1.0, 
-            pulseSpeed: 1 + Math.random() 
+            pulseSpeed: visual.pulseSpeed,
+            slotPressure: !!f.slot_pressure_flag,
+            visibleIds
         };
         
         scene.add(mesh);
@@ -612,6 +793,7 @@ function setViewMode(mode) {
                 initMapLibre();
             } else {
                 map.resize();
+                focusMapOnFilteredFlights();
             }
         }
     }
@@ -619,18 +801,55 @@ function setViewMode(mode) {
 
 // --- UI Logic ---
 function updateUI() {
+    const filteredFleet = getFilteredFleetData();
     const tbody = document.getElementById('fleet-table-body');
     if (tbody) {
-        tbody.innerHTML = fleetData.slice(0, 8).map(f => `
+        if (!filteredFleet.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="padding:18px 6px; color:#94a3b8; text-align:center; font-size:0.68rem;">
+                        No flights match the current decision filter.
+                    </td>
+                </tr>
+            `;
+        } else {
+            tbody.innerHTML = filteredFleet.slice(0, 8).map(f => `
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
                 <td style="padding: 10px 5px; font-weight:bold; color:#38bdf8;">${f.flight_id}</td>
                 <td style="padding: 10px 5px; color:#f8fafc;">${(f.load_factor * 100).toFixed(0)}%</td>
-                <td style="padding: 10px 5px;"><span style="color:${f.assigned_delay > 0 ? '#f43f5e' : '#10b981'}">${f.assigned_delay > 0 ? 'DELAY' : 'OPTIMAL'}</span></td>
+                <td style="padding: 10px 5px;">
+                    <span style="color:${f.is_canceled ? '#f43f5e' : (f.slot_pressure_flag ? '#facc15' : (f.assigned_delay > 0 ? '#fb923c' : '#10b981'))}">${f.is_canceled ? 'CANCEL' : (f.slot_pressure_flag ? 'PRESSURE' : (f.assigned_delay > 0 ? 'DELAY' : 'CLEAR'))}</span>
+                    <div style="font-size:0.58rem; color:#94a3b8; margin-top:4px; line-height:1.35;">${shortenReason(f.decision_reason)}</div>
+                </td>
             </tr>
-        `).join('');
+            `).join('');
+        }
     }
 
-    const causes = fleetData.reduce((acc, f) => {
+    if (decisionSummary) {
+        const canceled = document.getElementById('kpi-canceled');
+        const delayed = document.getElementById('kpi-delayed');
+        const swaps = document.getElementById('kpi-swaps');
+        const topReason = document.getElementById('kpi-top-reason');
+        const summaryBanner = document.getElementById('decision-summary-banner');
+        if (canceled) canceled.innerText = decisionSummary.canceled;
+        if (delayed) delayed.innerText = decisionSummary.delayed;
+        if (swaps) swaps.innerText = decisionSummary.swap_count;
+        if (topReason) {
+            topReason.innerText = decisionSummary.top_reasons?.length
+                ? `${decisionSummary.top_reasons[0].reason} (${decisionSummary.top_reasons[0].count})`
+                : "No dominant decision driver yet.";
+        }
+        if (summaryBanner) {
+            const top = decisionSummary.top_reasons?.[0];
+            summaryBanner.innerText = top
+                ? `${decisionSummary.canceled} canceled, ${decisionSummary.delayed} delayed, ${decisionSummary.swap_count} swaps. Main driver: ${top.reason}.`
+                : `${decisionSummary.canceled} canceled, ${decisionSummary.delayed} delayed, ${decisionSummary.swap_count} swaps recorded.`;
+        }
+    }
+    updateFilterCards();
+
+    const causes = filteredFleet.reduce((acc, f) => {
         const factor = f.causal_factor || 'Operational';
         acc[factor] = (acc[factor] || 0) + 1;
         return acc;
@@ -714,6 +933,15 @@ async function fetchForecast() {
     } catch (err) {}
 }
 
+async function fetchModelBenchmark() {
+    try {
+        const response = await fetch(`${API_BASE}/analytics/model-benchmark`);
+        if (!response.ok) return;
+        benchmarkSummary = await response.json();
+        updateBenchmarkUI(benchmarkSummary);
+    } catch (err) {}
+}
+
 function updateForecastUI(forecast) {
     const tbody = document.getElementById('forecast-body');
     if (!tbody) return;
@@ -726,11 +954,44 @@ function updateForecastUI(forecast) {
     `).join('');
 }
 
+function updateBenchmarkUI(payload) {
+    const tbody = document.getElementById('benchmark-body');
+    const best = document.getElementById('benchmark-best-model');
+    const meta = document.getElementById('benchmark-dataset-meta');
+    if (!tbody || !payload) return;
+
+    if (best) {
+        best.innerText = payload.best_model ? `Best: ${payload.best_model}` : "No winner";
+        best.style.color = payload.best_model ? "#facc15" : "#94a3b8";
+    }
+
+    if (meta && payload.dataset) {
+        meta.innerText = `${payload.dataset.rows} rows | ${payload.dataset.train_rows} train | ${payload.dataset.test_rows} test | positive rate ${Math.round((payload.dataset.positive_rate || 0) * 100)}%`;
+    }
+
+    const models = payload.models || [];
+    tbody.innerHTML = models.map(model => {
+        const ok = model.status === 'ok';
+        const isBest = payload.best_model === model.name;
+        const stateColor = ok ? (isBest ? '#facc15' : '#10b981') : '#94a3b8';
+        const stateLabel = ok ? (isBest ? 'LEADER' : 'READY') : 'SKIPPED';
+        return `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                <td style="padding:6px 4px; color:${isBest ? '#f8fafc' : '#cbd5e1'}; font-weight:${isBest ? '700' : '500'};">${model.name}</td>
+                <td style="padding:6px 4px; color:#f8fafc;">${ok && model.f1 != null ? model.f1.toFixed(3) : '--'}</td>
+                <td style="padding:6px 4px; color:#cbd5e1;">${ok && model.roc_auc != null ? model.roc_auc.toFixed(3) : '--'}</td>
+                <td style="padding:6px 4px; color:${stateColor}; font-weight:bold;">${stateLabel}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
 // --- Start System ---
 document.addEventListener('DOMContentLoaded', () => {
     initCharts();
     fetchScenario();
     fetchForecast();
+    fetchModelBenchmark();
     updateAIBriefing(); // v34.0: Initial Neural Uplink
     
     // v35.5: WebSocket Real-Time Integration
@@ -741,6 +1002,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logAction("[NET] WebSocket Push: Tactical Scenario Updated.");
             fetchScenario();
             fetchForecast();
+            fetchModelBenchmark();
             updateEvolutionStats();
         }
     };
@@ -750,6 +1012,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(() => {
         fetchScenario();
         fetchForecast();
+        fetchModelBenchmark();
     }, 60000); 
     
     setInterval(updateEvolutionStats, 5000); // Faster polling for XP
@@ -803,7 +1066,7 @@ document.getElementById('three-container').addEventListener('mousemove', (e) => 
                 <div style="margin-top: 4px; color: #94a3b8;">
                     SPD: <span style="color:#e2e8f0; font-weight:bold;">${Math.round(u.velocity)} kts</span><br/>
                     ALT: <span style="color:#e2e8f0; font-weight:bold;">${u.alt} ft</span><br/>
-                    STATUS: <span style="color:${u.status === 'DELAYED' ? '#f43f5e' : '#10b981'}; font-weight:bold;">${u.status}</span><br/>
+                    STATUS: <span style="color:${u.status === 'CANCELED' ? '#f43f5e' : (u.status === 'PRESSURE' ? '#facc15' : (u.status === 'DELAYED' ? '#fb923c' : '#10b981'))}; font-weight:bold;">${u.status}</span><br/>
                     <span style="color:#38bdf8; font-size:9px; margin-top:4px; display:block;">[CLICK TO LOCK RADAR]</span>
                 </div>
             `;
@@ -846,7 +1109,7 @@ document.getElementById('three-container').addEventListener('click', (e) => {
             document.getElementById('dtl-alt').innerHTML = `<span style="color:#38bdf8;">${u.alt}</span> ft`;
             document.getElementById('dtl-heading').innerHTML = `<span style="color:#38bdf8;">${u.heading}</span>°`;
             document.getElementById('dtl-status').innerText = u.status;
-            document.getElementById('dtl-status').style.color = u.status === 'DELAYED' ? '#f43f5e' : '#10b981';
+            document.getElementById('dtl-status').style.color = u.status === 'CANCELED' ? '#f43f5e' : (u.status === 'PRESSURE' ? '#facc15' : (u.status === 'DELAYED' ? '#fb923c' : '#10b981'));
 
             // Resolve Origin/Dest and other metadata
             const fleetInfo = fleetData.find(f => f.flight_id === u.flight_id);
@@ -854,8 +1117,14 @@ document.getElementById('three-container').addEventListener('click', (e) => {
                 document.getElementById('dtl-origin-dest').innerText = `${fleetInfo.origin} ➔ ${fleetInfo.destination}`;
                 document.getElementById('dtl-lf').innerText = `${(fleetInfo.load_factor * 100).toFixed(0)}%`;
                 document.getElementById('dtl-cert').innerText = fleetInfo.ac_cat || fleetInfo.ac_type || "Commercial";
+                document.getElementById('dtl-reason').innerText = fleetInfo.decision_reason || "No tactical explanation available.";
+                document.getElementById('dtl-slot-flag').innerText = fleetInfo.slot_pressure_flag ? "SLOT PRESSURE" : "NORMAL FLOW";
+                document.getElementById('dtl-slot-flag').style.color = fleetInfo.slot_pressure_flag ? "#facc15" : "#10b981";
             } else {
                 document.getElementById('dtl-origin-dest').innerText = `LIVE RADAR ➔ UNKNOWN`;
+                document.getElementById('dtl-reason').innerText = "Live radar target is not part of the optimized tactical scenario.";
+                document.getElementById('dtl-slot-flag').innerText = "EXTERNAL TRACK";
+                document.getElementById('dtl-slot-flag').style.color = "#38bdf8";
             }
 
             document.getElementById('flight-detail-panel').classList.remove('hidden');
