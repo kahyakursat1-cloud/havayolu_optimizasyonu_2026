@@ -60,6 +60,7 @@ from src.models.ground_agent import ground_agent
 from src.analytics.efficiency_audit import sbm_auditor
 from src.models.trust_auditor import trust_auditor
 from src.data_connectors.live_sync import ExternalDataConnector
+from src.api.exporters import build_pdf_report, build_xlsx_report
 from src.models.federated_node import federated_aggregator
 from src.analytics.energy_grid import energy_grid
 import asyncio
@@ -600,6 +601,34 @@ async def export_scenario_csv(filter: str = "all"):
     return Response(
         content=csv_payload,
         media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/api/export/decision-report.pdf")
+async def export_decision_report_pdf(filter: str = "all"):
+    filtered = _apply_decision_filter(state.df, filter)
+    summary = _build_decision_summary(filtered)
+    label = (filter or "all").strip().lower() or "all"
+    payload = build_pdf_report(filtered, summary, label)
+    filename = f"decision_report_{label}.pdf"
+    return Response(
+        content=payload,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/api/export/decision-report.xlsx")
+async def export_decision_report_xlsx(filter: str = "all"):
+    filtered = _apply_decision_filter(state.df, filter)
+    summary = _build_decision_summary(filtered)
+    label = (filter or "all").strip().lower() or "all"
+    payload = build_xlsx_report(filtered, summary, label)
+    filename = f"decision_report_{label}.xlsx"
+    return Response(
+        content=payload,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 

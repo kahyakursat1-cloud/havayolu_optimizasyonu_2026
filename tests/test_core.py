@@ -58,6 +58,27 @@ def test_csv_export_endpoint():
     assert "flight_id" in response.text
 
 
+def test_pdf_export_endpoint():
+    """PDF decision report should return a valid PDF file."""
+    response = client.get("/api/export/decision-report.pdf?filter=all")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content[:4] == b"%PDF"
+    assert "decision_report_all.pdf" in response.headers["content-disposition"]
+
+
+def test_xlsx_export_endpoint():
+    """XLSX decision report should return a valid Excel workbook."""
+    response = client.get("/api/export/decision-report.xlsx?filter=all")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    # XLSX is a zip; signature starts with PK
+    assert response.content[:2] == b"PK"
+    assert "decision_report_all.xlsx" in response.headers["content-disposition"]
+
+
 def test_produce_mega_benchmark_writes_raw_dataset(tmp_path):
     """Dataset generator should write a valid CSV to the requested path."""
     output_path = tmp_path / "scenario.csv"

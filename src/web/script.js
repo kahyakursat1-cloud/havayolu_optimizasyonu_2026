@@ -125,6 +125,32 @@ window.downloadDecisionReport = async function() {
         logAction("[REPORT] Decision report download failed.");
     }
 }
+async function _downloadBinary(path, filename, label) {
+    const filterName = activeDecisionFilter || 'all';
+    try {
+        const response = await fetch(`${API_BASE}/export/${path}?filter=${encodeURIComponent(filterName)}`);
+        if (!response.ok) throw new Error(`${label} export failed`);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename.replace('{filter}', filterName);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        logAction(`[EXPORT] ${label} ready for ${filterName} filter.`);
+    } catch (err) {
+        console.error(`${label} export failed:`, err);
+        logAction(`[EXPORT] ${label} export failed.`);
+    }
+}
+window.downloadDecisionReportPdf = function() {
+    return _downloadBinary('decision-report.pdf', 'decision_report_{filter}.pdf', 'PDF report');
+};
+window.downloadDecisionReportXlsx = function() {
+    return _downloadBinary('decision-report.xlsx', 'decision_report_{filter}.xlsx', 'XLSX report');
+};
 let isForesightActive = false;
 let foresightInterval = null;
 let isFollowMode = false;
