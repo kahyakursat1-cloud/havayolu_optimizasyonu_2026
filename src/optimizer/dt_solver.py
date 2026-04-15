@@ -7,6 +7,11 @@ from src.optimizer.hybrid_ga import QuantumInspiredGA
 
 logger = logging.getLogger(__name__)
 
+# EASA FTL simplified: single-duty-day block time ceiling.
+# Real FTL caps Flight Duty Period at 11-13h depending on sectors/timezones;
+# we use the tighter block-time cap as a conservative proxy.
+MAX_CREW_DUTY_MINS = 600
+
 
 class SolverError(Exception):
     """Base class for solver errors surfaced to the API layer."""
@@ -265,6 +270,18 @@ class DigitalTwinSolver:
                          if (f1, k) in y and (f2, k) in y:
                              model.Add(y[f1, k] + y[f2, k] <= 1)
 
+        # Crew duty window (EASA FTL simplified): total block-time a crew
+        # absorbs in one solve window cannot exceed MAX_CREW_DUTY_MINS.
+        # Builds an integer-weighted sum of y[f,k] * block_time(f).
+        for k in K:
+            terms = []
+            for f in F:
+                if (f, k) in y:
+                    block = int(self.flights.loc[f, 'block_time'])
+                    terms.append(y[f, k] * block)
+            if terms:
+                model.Add(sum(terms) <= MAX_CREW_DUTY_MINS)
+
         # Gate conflicts: if two flights occupy the same stand in an overlapping
         # tactical window, at least one must be canceled or assigned away by the model.
         for f1, f2 in gate_conflicts:
@@ -470,6 +487,9 @@ class DigitalTwinSolver:
             slot_data = slot_pressure_map.get(dep_key)
             if slot_data and slot_data['scheduled'] > slot_data['capacity']:
                 return "Cancellation: tactical airport slot pressure exceeded hourly capacity"
+            block = int(row.get('block_time', 0))
+            if block > MAX_CREW_DUTY_MINS / 2:
+                return "Cancellation: crew duty window (EASA FTL) saturated on candidate pairings"
             return "Cancellation: network feasibility conflict under current tactical constraints"
 
         reasons = []

@@ -59,6 +59,31 @@ def test_solver_capacity_constraint(mock_flights):
     assert result.loc['TK100', 'is_canceled'] == 1
 
 
+def test_solver_enforces_crew_duty_cap(mock_flights):
+    """When all eligible pairings share one crew and total block time exceeds
+    MAX_CREW_DUTY_MINS, at least one flight must be canceled."""
+    from src.optimizer.dt_solver import MAX_CREW_DUTY_MINS
+
+    df = mock_flights.copy()
+    # Force both flights onto the same crew so the duty cap is the only
+    # safety valve; bump block_time so the pair exceeds the FTL ceiling.
+    df['crew_id'] = 'CRW-01'
+    df['crew_cert'] = 'NARROW'
+    df.loc['TK100', 'block_time'] = 400
+    df.loc['TK200', 'block_time'] = 400
+    # Keep routes chained so crew continuity is not the blocker.
+    df.loc['TK200', 'origin'] = 'LHR'
+    df.loc['TK200', 'destination'] = 'IST'
+
+    solver = DigitalTwinSolver(df)
+    result = solver.solve_winning(max_time_sec=10)
+
+    assert int(result['is_canceled'].sum()) >= 1, (
+        f"Duty cap ({MAX_CREW_DUTY_MINS}m) should have forced a cancellation "
+        f"when total block time = 800m on a single crew"
+    )
+
+
 def test_solver_uses_hybrid_recovery_on_window_failure(mock_flights, monkeypatch):
     """If CP-SAT window solve fails, the hybrid GA recovery path should return a plan."""
 
