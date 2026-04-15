@@ -12,12 +12,17 @@ def mock_flights():
         'arrival_time': [pd.Timestamp('2026-04-14 12:00:00'), pd.Timestamp('2026-04-14 16:00:00')],
         'origin': ['IST', 'LHR'],
         'destination': ['LHR', 'JFK'],
+        'origin_lat': [41.275, 51.470],
+        'origin_lon': [28.751, -0.454],
+        'dest_lat': [51.470, 40.641],
+        'dest_lon': [-0.454, -73.778],
         'passenger_count': [150, 180],
         'ac_capacity': [180, 189],
         'ac_cat': ['NARROW', 'NARROW'],
+        'ac_type': ['A320', 'B737'],
         'crew_cert': ['NARROW', 'NARROW'],
         'block_time': [120, 120],
-        'ac_remaining_fh': [100.0, 100.0],
+        'ac_remaining_fh': [100, 100],
         'dist_km': [2400, 5500],
         'revenue_tl': [100000, 120000],
         'op_cost_tl': [20000, 25000],
@@ -30,7 +35,13 @@ def mock_flights():
         'engine_health': [0.95, 0.92],
         'maintenance_reason': ['', ''],
         'market_qsi_weight': [1.0, 1.0],
-        'status': ['SCHEDULED', 'SCHEDULED']
+        'business_pax': [50, 60],
+        'leisure_pax': [100, 120],
+        'is_canceled': [0, 0],
+        'assigned_delay': [0, 0],
+        'is_night_flight': [0, 0],
+        'ntn_link_active': [1, 1],
+        'slot_pressure_flag': [0, 0]
     }
     df = pd.DataFrame(data).set_index('flight_id')
     return df

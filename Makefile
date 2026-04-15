@@ -6,7 +6,7 @@ run:
 	cd src && ./.venv/bin/python -m uvicorn api.main:app --host 0.0.0.0 --port 8501
 
 test:
-	cd src && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q ../tests/test_core.py ../tests/test_solver.py ../tests/test_integration.py ../tests/test_models.py ../tests/test_live_sync.py
+	cd src && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q -p pytest_asyncio.plugin --asyncio-mode=auto ../tests/
 
 test-fast:
 	cd src && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./.venv/bin/python -m pytest -q ../tests/test_core.py ../tests/test_solver.py

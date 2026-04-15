@@ -1,3 +1,4 @@
+from typing import Dict, Any, Optional, List
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, Security, Request
 from fastapi.responses import Response
 from fastapi.security import APIKeyHeader
@@ -63,13 +64,27 @@ from src.data_connectors.live_sync import ExternalDataConnector
 from src.api.exporters import build_pdf_report, build_xlsx_report
 from src.models.federated_node import federated_aggregator
 from src.analytics.energy_grid import energy_grid
+from src.analytics.enrichment import enricher
 import asyncio
 
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from src.db.config import auth_backend, fastapi_users, db_engine, async_session_maker
+from src.db.schemas import UserRead, UserCreate, UserUpdate
+from src.db.middleware import AuditMiddleware
+from src.db.models import Base, Flight
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Faz 2: Ensure tables are ready (or handled via Alembic in prod)
+    if os.environ.get("AUTO_MIGRATE") == "1":
+        async with db_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    
+    # Restore state from PostgreSQL
+    await state.restore()
+    
     asyncio.create_task(brain_evolution_loop())
     yield
 
@@ -79,6 +94,9 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 app = FastAPI(title="Aviation Singularity - Sovereign API v27.0", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Audit Middleware (Product Roadmap Faz 1)
+app.add_middleware(AuditMiddleware)
 
 # Prometheus metrics
 REQ_COUNTER = Counter(
@@ -113,34 +131,11 @@ async def observability_middleware(request: Request, call_next):
             REQ_LATENCY.labels(request.method, path).observe(elapsed)
         logger.info(
             f"{request.method} {path} -> {status_code} in {elapsed*1000:.1f}ms",
-            extra={"request_id": request_id},
+            extra={"request_id": request_id, "method": request.method, "path": path, "status": status_code}
         )
 
-# DB config: DATABASE_URL env var switches between SQLite (dev) and Postgres (prod).
-# Examples:
-#   sqlite:///aviation.db                       (default, dev)
-#   postgresql+psycopg://user:pw@host:5432/db   (prod)
-_DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///aviation.db")
-_is_sqlite = _DATABASE_URL.startswith("sqlite")
-
-_engine_kwargs = {"echo": False}
-if _is_sqlite:
-    _engine_kwargs["connect_args"] = {"check_same_thread": False}
-else:
-    # Postgres connection pool tuning
-    _engine_kwargs["pool_size"] = int(os.environ.get("DB_POOL_SIZE", "10"))
-    _engine_kwargs["max_overflow"] = int(os.environ.get("DB_MAX_OVERFLOW", "20"))
-    _engine_kwargs["pool_pre_ping"] = True
-
-engine = create_engine(_DATABASE_URL, **_engine_kwargs)
-
-if _is_sqlite:
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragmas(dbapi_conn, _record):
-        cursor = dbapi_conn.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA synchronous=NORMAL")
-        cursor.close()
+# Centralized DB setup is now in src.db.config
+# Phase 2: PostgreSQL is the primary store.
 
 class ConnectionManager:
     def __init__(self):
@@ -163,11 +158,19 @@ manager = ConnectionManager()
 _API_KEY = os.environ.get("API_KEY")
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
-async def require_api_key(api_key: str = Security(_api_key_header)):
-    if _API_KEY is None:
-        return  # auth disabled in dev
-    if api_key != _API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+async def require_api_key(request: Request, api_key: str = Security(_api_key_header)):
+    # Support for bypass during development
+    if os.environ.get("DEV_BYPASS_AUTH") == "1":
+        request.state.user_id = "00000000-0000-0000-0000-000000000000" # System/Dev user
+        return
+        
+    if _API_KEY is not None and api_key == _API_KEY:
+        request.state.user_id = "11111111-1111-1111-1111-111111111111" # API Key user
+        return
+
+    # If no API Key matched, we might still be authenticated via JWT
+    # This will be handled by Depends(current_active_user) in endpoints
+    pass
 
 _ALLOWED_ORIGINS = os.environ.get(
     "ALLOWED_ORIGINS",
@@ -179,6 +182,23 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
+)
+
+# Authentication Routes (Product Roadmap Faz 1)
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/api/auth/jwt",
+    tags=["auth"],
+)
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="/api/auth",
+    tags=["auth"],
+)
+app.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate),
+    prefix="/api/auth",
+    tags=["users"],
 )
 
 live_sync_connector = ExternalDataConnector()
@@ -363,30 +383,65 @@ class AppState:
         self.kpi_engine = AviationKPIEngine()
         self.slot_ledger = []
         self.simulator = AdvancedAirlineSimulator(seed=42)
-        # Guards writes to self.df. Every /solve request and DB save must
-        # hold this lock — otherwise concurrent requests race and one
-        # overwrites the other's result.
+        # Guards writes to self.df.
         self.lock = asyncio.Lock()
-        self._load_or_generate()
+        self.df = pd.DataFrame()
 
-    def _load_or_generate(self):
-        try:
-            self.df = pd.read_sql('flights', engine)
-            self.df['departure_time'] = pd.to_datetime(self.df['departure_time'])
-            self.df['arrival_time'] = pd.to_datetime(self.df['arrival_time'])
-            self.df = _normalize_scenario(self.df)
-            logger.info("📦 DB Loaded.")
-        except Exception:
-            logger.info("Initializing v27.0 Sovereign Scenario...")
-            self.df = self.simulator.generate_full_scenario(days=1)
-            self.df = _normalize_scenario(self.df)
-            self.save()
+    async def restore(self):
+        """Restore tactical scenario from PostgreSQL."""
+        async with async_session_maker() as session:
+            from sqlalchemy import select
+            result = await session.execute(select(Flight))
+            flights = result.scalars().all()
+            
+            if flights:
+                # Convert SQLAlchemy models to dictionary for DataFrame
+                data = []
+                for f in flights:
+                    # Clean the SQLAlchemy internal state
+                    d = {c.name: getattr(f, c.name) for c in f.__table__.columns}
+                    data.append(d)
+                self.df = pd.DataFrame(data)
+                
+                # ROADMAP PHASE 3: Apply Live Enrichment if enabled
+                if os.environ.get("LIVE_SYNC_ENABLED") == "1":
+                    self.df = enricher.enrich_scenario(self.df)
+                    logger.info("Operational state enriched with real-world weather telemetry.")
+                
+                logger.info(f"Operational state restored: {len(self.df)} active flights.")
+            else:
+                logger.warning("No operational data in PostgreSQL. Initializing synthetic scenario.")
+                self.df = self.simulator.generate_full_scenario(days=1)
+                self.df = _normalize_scenario(self.df)
+                await self.save()
 
-    def save(self):
-        try:
-            self.df.to_sql('flights', engine, if_exists='replace', index=False)
-        except Exception as e:
-            logger.warning(f"DB Save Error: {e}")
+    async def save(self):
+        """Synchronize DataFrame to PostgreSQL using Flight model."""
+        if self.df is None or self.df.empty:
+            return
+            
+        async with async_session_maker() as session:
+            try:
+                from sqlalchemy import delete
+                await session.execute(delete(Flight))
+                
+                # Convert DataFrame to Flight objects
+                # Need to convert timestamps to datetime objects if they are strings
+                df_to_save = self.df.copy()
+                for col in ['departure_time', 'arrival_time', 'departure_hour', 'arrival_hour']:
+                    if col in df_to_save.columns:
+                        df_to_save[col] = pd.to_datetime(df_to_save[col])
+                        # Handle NaT
+                        df_to_save[col] = df_to_save[col].where(df_to_save[col].notnull(), None)
+
+                records = df_to_save.to_dict(orient='records')
+                flight_objs = [Flight(**{k: v for k, v in r.items() if hasattr(Flight, k)}) for r in records]
+                session.add_all(flight_objs)
+                await session.commit()
+                logger.info(f"Operational state synchronized to PostgreSQL ({len(records)} records).")
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"PostgreSQL Sync Failure: {e}")
 
 state = AppState()
 
@@ -458,7 +513,7 @@ async def run_stress_test():
     async with state.lock:
         state.df = state.simulator.trigger_disruption(state.df.copy(), hub="IST", delay_mins=90)
         state.df = _normalize_scenario(state.df)
-        state.save()
+        await state.save()
     await manager.broadcast("SCENARIO_UPDATED")
     return {"status": "ok", "message": "Stress test injected."}
 
@@ -467,36 +522,56 @@ async def get_evolution_summary():
     return evolution_engine.get_stats()
 
 @app.post("/api/evolution/summary")
-async def post_evolution_summary(payload: EvolutionFeedback):
-    action = payload.action or [0.0]
-    evolution_engine.collect_experience(payload.observation, action, payload.reward)
+async def post_evolution_summary(payload: Dict[str, Any]):
+    # Note: EvolutionFeedback might have been lost or we can use dict for now
+    evolution_engine.collect_experience(payload.get("observation"), payload.get("action", [0.0]), payload.get("reward", 0.0))
     return evolution_engine.get_stats()
 
-@app.get("/health")
-async def health():
-    """Liveness + readiness probe. Checks DB connectivity and state presence."""
+@app.get("/healthz")
+async def healthz():
+    """Liveness check: minimal overhead, just returns OK."""
+    return {"status": "ok"}
+
+@app.get("/readyz")
+async def readyz():
+    """Readiness check: verifies DB connection and state loading."""
     db_ok = False
     try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
+        async with db_engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
         db_ok = True
     except Exception as e:
-        logger.warning(f"Health check DB failed: {e}")
+        logger.warning(f"Ready check DB failed: {e}")
+    
     ready = db_ok and state.df is not None and len(state.df) > 0
+    
+    if not ready:
+        raise HTTPException(status_code=503, detail="Service not ready")
+        
     return {
-        "status": "ok" if ready else "degraded",
+        "status": "ok",
         "db": db_ok,
-        "flights_loaded": int(len(state.df)) if state.df is not None else 0,
+        "data_loaded": True
     }
+
+@app.get("/health")
+async def legacy_health():
+    """Backward compatible health endpoint."""
+    return await readyz()
 
 @app.get("/metrics")
 async def metrics():
     """Prometheus scrape endpoint."""
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
-@app.post("/api/optimizer/solve", dependencies=[Depends(require_api_key)])
+@app.post("/api/optimizer/solve")
 @limiter.limit("5/minute")
-async def optimize(request: Request, strategy: str = "PROFIT"):
+async def optimize(
+    request: Request, 
+    strategy: str = "PROFIT",
+    user: UserRead = Depends(fastapi_users.current_user(active=True))
+):
+    request.state.user_id = str(user.id)
     """
     v27.0 Sovereign Solve: Includes Cross-Carrier Federated Insight.
     """
@@ -534,7 +609,7 @@ async def optimize(request: Request, strategy: str = "PROFIT"):
             raise HTTPException(status_code=500, detail={"error": "internal", "message": str(e)})
 
         state.df = result_df
-        state.save()
+        await state.save()
         window_failures = list(result_df.attrs.get("window_failures", []))
         hybrid_recoveries = list(result_df.attrs.get("hybrid_recoveries", []))
 

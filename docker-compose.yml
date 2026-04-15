@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   aviation-core:
     build: .
@@ -6,17 +8,120 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./src/models:/app/src/models
+      - ./data:/app/data
     environment:
-      DATABASE_URL: ${DATABASE_URL:-sqlite:///aviation.db}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://aviation_user:aviation_pass@db:5432/aviation_db}
       API_KEY: ${API_KEY:-}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8501,http://127.0.0.1:8501}
       DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
       DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-20}
       LIVE_SYNC_ENABLED: ${LIVE_SYNC_ENABLED:-0}
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8501/health"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:8501/healthz"]
       interval: 30s
       timeout: 5s
       retries: 5
       start_period: 20s
     restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: aviation-db
+    restart: always
+    environment:
+      POSTGRES_DB: aviation_db
+      POSTGRES_USER: aviation_user
+      POSTGRES_PASSWORD: aviation_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aviation_user -d aviation_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: always
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8080:8080"
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aviation-prometheus
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    container_name: aviation-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./deploy/monitoring/loki-config.yml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: aviation-promtail
+    volumes:
+      - ./logs:/var/log/aviation
+      - ./deploy/monitoring/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aviation-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./deploy/monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:latest
+    container_name: aviation-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - aviation-core
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+  caddy_data:
+  caddy_config:

@@ -73,3 +73,13 @@ urllib3==2.6.3
 uvicorn==0.44.0
 watchdog==6.0.0
 xgboost==3.2.0
+
+# Product Roadmap Phase 1 & 2
+fastapi-users[sqlalchemy]>=13.0.0
+alembic
+psycopg[binary]
+python-jose[cryptography]
+passlib[bcrypt]
+sqlalchemy>=2.0.0
+aiosqlite
+pybreaker

@@ -1,22 +1,24 @@
 """External data connectors.
 
-Fetches real aircraft traffic from OpenSky Network and weather from
-Open-Meteo. Falls back to synthetic data on HTTP failure or when
-LIVE_SYNC_ENABLED is unset, so demos stay deterministic offline.
+Fetches real aircraft traffic from OpenSky Network, weather from
+Open-Meteo, and METAR strings from NOAA. Features circuit breakers
+and offline fallbacks for production stability.
 """
 import os
 import random
 import time
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List, Dict
 
 import requests
+import pybreaker
 
 logger = logging.getLogger(__name__)
 
 OPENSKY_URL = "https://opensky-network.org/api/states/all"
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
+NOAA_METAR_URL = "https://aviationweather.gov/api/data/metar"
 
 AIRPORT_COORDS = {
     "IST": (41.2753, 28.7519),
@@ -31,6 +33,10 @@ AIRPORT_COORDS = {
 
 DEFAULT_TR_BBOX = (35.0, 25.0, 43.0, 45.0)
 
+# Circuit Breakers: Fail after 5 consecutive errors, reset after 60s
+opensky_breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=60)
+weather_breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=60)
+noaa_breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=60)
 
 class _TTLCache:
     def __init__(self, ttl_seconds: int = 60):
@@ -52,7 +58,7 @@ class _TTLCache:
 
 
 class ExternalDataConnector:
-    """Live traffic + weather connector with offline fallback."""
+    """Live traffic + weather connector with circuit breakers and offline fallback."""
 
     def __init__(self, enabled: Optional[bool] = None, timeout: float = 4.0):
         if enabled is None:
@@ -61,27 +67,60 @@ class ExternalDataConnector:
         self.timeout = timeout
         self._traffic_cache = _TTLCache(ttl_seconds=60)
         self._weather_cache = _TTLCache(ttl_seconds=600)
+        self._noaa_cache = _TTLCache(ttl_seconds=900)
+
+    @noaa_breaker
+    def fetch_noaa_metar(self, airport_code: str = "IST") -> Optional[str]:
+        """Fetch raw METAR string from NOAA."""
+        cached = self._noaa_cache.get(airport_code)
+        if cached:
+            return cached
+
+        if self.enabled:
+            try:
+                resp = requests.get(
+                    NOAA_METAR_URL,
+                    params={"ids": airport_code, "format": "json"},
+                    timeout=self.timeout,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                if data and isinstance(data, list) and len(data) > 0:
+                    metar = data[0].get("rawOb")
+                    self._noaa_cache.set(airport_code, metar)
+                    return metar
+            except Exception as exc:
+                logger.warning("NOAA METAR fetch failed for %s: %s", airport_code, exc)
+                raise exc # Trigger circuit breaker
+        return None
+
+    @weather_breaker
+    def _fetch_meteo_raw(self, airport_code: str) -> dict:
+        coords = AIRPORT_COORDS.get(airport_code)
+        if not coords:
+            raise ValueError(f"unknown airport: {airport_code}")
+        lat, lon = coords
+        resp = requests.get(
+            OPEN_METEO_URL,
+            params={
+                "latitude": lat,
+                "longitude": lon,
+                "current": "temperature_2m,wind_speed_10m,wind_direction_10m,visibility,pressure_msl",
+            },
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        return resp.json().get("current", {})
 
     def fetch_real_metar(self, airport_code: str = "IST") -> dict:
+        """Fetch current weather metrics from Open-Meteo. Returns fallback on failure."""
         cached = self._weather_cache.get(airport_code)
         if cached:
             return cached
 
-        coords = AIRPORT_COORDS.get(airport_code)
-        if self.enabled and coords:
+        if self.enabled and airport_code in AIRPORT_COORDS:
             try:
-                lat, lon = coords
-                resp = requests.get(
-                    OPEN_METEO_URL,
-                    params={
-                        "latitude": lat,
-                        "longitude": lon,
-                        "current": "temperature_2m,wind_speed_10m,wind_direction_10m,visibility,pressure_msl",
-                    },
-                    timeout=self.timeout,
-                )
-                resp.raise_for_status()
-                current = resp.json().get("current", {})
+                current = self._fetch_meteo_raw(airport_code)
                 visibility = int(current.get("visibility", 9999) or 9999)
                 result = {
                     "airport": airport_code,
@@ -97,11 +136,23 @@ class ExternalDataConnector:
                 self._weather_cache.set(airport_code, result)
                 return result
             except Exception as exc:
-                logger.warning("Open-Meteo fetch failed for %s: %s", airport_code, exc)
+                logger.warning("Weather fetch failed for %s: %s", airport_code, exc)
 
         return self._fallback_weather(airport_code)
 
+    @opensky_breaker
+    def _fetch_opensky_raw(self, bbox) -> list:
+        min_lat, min_lon, max_lat, max_lon = bbox
+        resp = requests.get(
+            OPENSKY_URL,
+            params={"lamin": min_lat, "lomin": min_lon, "lamax": max_lat, "lomax": max_lon},
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        return (resp.json() or {}).get("states") or []
+
     def fetch_opensky_traffic(self, bbox=DEFAULT_TR_BBOX) -> dict:
+        """Fetch live aircraft states from OpenSky. Returns fallback on failure."""
         cache_key = tuple(bbox)
         cached = self._traffic_cache.get(cache_key)
         if cached:
@@ -109,20 +160,7 @@ class ExternalDataConnector:
 
         if self.enabled:
             try:
-                min_lat, min_lon, max_lat, max_lon = bbox
-                resp = requests.get(
-                    OPENSKY_URL,
-                    params={
-                        "lamin": min_lat,
-                        "lomin": min_lon,
-                        "lamax": max_lat,
-                        "lomax": max_lon,
-                    },
-                    timeout=self.timeout,
-                )
-                resp.raise_for_status()
-                payload = resp.json() or {}
-                states = payload.get("states") or []
+                states = self._fetch_opensky_raw(bbox)
                 result = {
                     "active_icao_count": len(states),
                     "region": "TR-Airspace" if bbox == DEFAULT_TR_BBOX else "custom",
@@ -138,6 +176,7 @@ class ExternalDataConnector:
         return self._fallback_traffic(bbox)
 
     def sync_all(self) -> dict:
+        """Synchronize all streams."""
         return {
             "weather": self.fetch_real_metar("IST"),
             "traffic": self.fetch_opensky_traffic(),
@@ -165,3 +204,5 @@ class ExternalDataConnector:
             "is_real_data": False,
             "source": "fallback",
         }
+
+market_intel = ExternalDataConnector()
