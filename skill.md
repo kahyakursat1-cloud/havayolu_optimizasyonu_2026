@@ -4,7 +4,7 @@
 - **Dil:** Python 3.10+
 - **Optimizasyon:** Google OR-Tools (MILP) + **Sıfırdan Custom Genetic Algorithm (Hybrid)**.
 - **Explainability:** SHAP (Modellerin neden karar verdiğini açıklamak için).
-- **Arayüz:** Streamlit (Decision Intelligence Dashboard).
+- **Arayüz:** FastAPI + statik web katmanı (Decision Intelligence Dashboard).
 
 ## 📐 Matematiksel Gereklilikler
 - **Lineer Programlama (LP):** Kısıtlar altında en iyi çözümü bulma.

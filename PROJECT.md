@@ -1,47 +1,31 @@
-# 🚀 TEKNOFEST 2026: Havayolu Dijital İkizi - Proje Yol Haritası
+# TEKNOFEST 2026 Proje Durumu
 
-**Proje Kodu:** TEKNO-AIR-2026  
-**Hedef:** TEKNOFEST 2026 Finalist → Derece  
-**Süre:** 16 Hafta (4 Ay)
+## Mevcut Ürün Durumu
+Proje artık konsept seviyesinden çıkıp çalışan bir ürün prototipine dönüştürülmüştür.
 
----
+- Aktif arayüz hattı: FastAPI + statik web frontend
+- Aktif karar motoru: CP-SAT tabanlı optimize edici
+- Aktif analitik yüzeyler: KPI, forecast, foresight, stress test, explanation API
+- Aktif UX özellikleri: 2D/3D görünüm, karar filtreleri, uçuş bazlı açıklama paneli, otomatik harita odaklama
 
-## 1️⃣ PROJE ÖZETİ
+## Tamamlanan Temel Adımlar
+- Eski Streamlit/dashboard yapısı sistemden kaldırıldı.
+- Kullanılmayan benchmark ve verify scriptleri temizlendi.
+- Solver gerçekçiliği kapasite baskısı ve gate çakışmaları ile artırıldı.
+- Karar açıklanabilirliği backend ve frontend katmanına işlendi.
+- Test yüzeyi çekirdek, solver ve entegrasyon kapsamında yeşil hale getirildi.
 
-### 🎯 Vizyon
-AI-guided çok amaçlı optimizasyon ile gerçek zamanlı karar desteği sağlayan, endüstriyel standartlarda bir Dijital İkiz sistemi geliştirmek.
+## Kalan Yüksek Öncelikli İşler
+- Gerçek dış veri kaynaklarıyla entegrasyon
+- Solver’da crew duty/rest ve slot modeli derinleştirme
+- Deployment ve production config standardizasyonu
+- Raporlama/export akışı
 
-### 🔑 Ana Bileşenler (5-Layer Mimarisi)
-1. **Layer 5: Decision Support** (Dashboard/UI)
-2. **Layer 4: Simulation** (What-if Scenarios)
-3. **Layer 3: Optimization** (Hybrid MILP + GA)
-4. **Layer 2: Prediction** (XGBoost Delay Model)
-5. **Layer 1: Data Layer** (Historical & Real-time)
+## Teknik Yığın
+- Backend: FastAPI, SQLAlchemy, SQLite
+- Optimization: OR-Tools CP-SAT
+- ML/Analytics: SHAP, XGBoost, RL yardımcı modülleri
+- Frontend: Three.js, MapLibre, Chart.js
 
----
-
-## 2️⃣ MILESTONE ve TIMELINE (16 Hafta)
-
-- **PHASE 1: Hazırlık ve Öğrenme (Hafta 1-3)**
-- **PHASE 2: Temel Geliştirme (Hafta 4-8)** -> *Şu an buradayız (v6.0 Grand Master)*
-- **PHASE 3: Entegrasyon ve Test (Hafta 9-12)**
-- **PHASE 4: Dokümantasyon ve Sunum (Hafta 13-16)**
-
----
-
-## 3️⃣ TEKNİK SPESİFİKASYONLAR
-- **Backend:** FastAPI, Python 3.10+
-- **AI/ML:** XGBoost, SHAP, Optuna, RL (Post-opt)
-- **Optimization:** OR-Tools (MILP), Custom GA (Route-preserving)
-- **UI:** Streamlit, Plotly
-
----
-
-## 🎯 DEĞERLENDİRME HEDEFİMİZ
-- **Yenilikçilik:** 22/25
-- **Teknik Yeterlilik:** 23/25
-- **Uygulama Potansiyeli:** 19/20
-- **AI Kullanımı:** 14/15
-- **Matematiksel Model:** 9/10
-- **Sunum/Dokümantasyon:** 5/5
-**TOPLAM HEDEF: 92/100 (🥇 Adayı)**
+## Başarı Ölçütü
+Bugünkü hedef “çalışan, savunulabilir ve gösterilebilir karar destek ürünü”dür. Bundan sonraki faz “gerçek veri ile ürünleştirme” olacaktır.

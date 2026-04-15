@@ -65,7 +65,7 @@ EKİP YAPISI
 ### 🎯 Sorumluluklar
 - Sistem mimarisi (5-Layer)
 - Backend API (FastAPI)
-- Dashboard (Streamlit)
+- Web UI (FastAPI-served static frontend)
 
 ---
 

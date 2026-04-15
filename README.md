@@ -1,65 +1,67 @@
-# 🚀 Aviation Singularity OS (v27.0 - Sovereign Ecosystem)
-![Aviation Singularity Official Logo](https://img.shields.io/badge/Status-Jury--Ready-brightgreen?style=for-the-badge)
-![EASA Certification](https://img.shields.io/badge/EASA--Level-3-blue?style=for-the-badge)
-![Architecture](https://img.shields.io/badge/Architecture-Federated--6G--NTN-orange?style=for-with-badge)
+# Aviation Singularity OS
 
-### *TEKNOFEST 2026 - National Technology Initiative (Post-2030 Vision)*
-**Final Venue: Şanlıurfa (Sept 30 - Oct 4, 2026)**
+TEKNOFEST 2026 için geliştirilen bu proje, havayolu operasyonlarını sentetik veri üzerinde optimize eden, sonucu FastAPI tabanlı bir API ve ürünleşmiş web arayüzü üzerinden sunan bir karar destek sistemidir.
 
-Aviation Singularity is a **State-of-the-Art (SOTA) Aviation Operating System (Aviation OS)** designed for the next decade of decentralized, green, and resilient flight operations. It moves beyond simple optimization into a **Sovereign & Grid-Integrated Ecosystem**.
+## Ürün Ne Yapıyor
+- Sentetik operasyon senaryosu üretir.
+- CP-SAT tabanlı optimizasyon ile uçuş atama, gecikme ve iptal kararları üretir.
+- KPI, forecast, stress test ve live-sync benzeri operasyon yüzeyleri sağlar.
+- Uçuş bazında `decision_reason` üretir ve kararların nedenini API ile arayüzde görünür kılar.
+- 2D/3D dijital ikiz arayüzünde filtrelenebilir operasyon görünümü sunar.
 
----
+## Aktif Mimari
+- Backend: FastAPI, SQLite, Prometheus metriği, rate limit, websocket güncellemesi
+- Optimization: OR-Tools CP-SAT, fatigue-aware ve slot-pressure-aware planlama
+- Analytics: KPI, forecast, foresight heatmap, federated/trust/energy yardımcı modülleri
+- Frontend: FastAPI tarafından servis edilen statik web UI, Three.js, MapLibre, Chart.js
 
-## 🌌 High-Fidelity Architectural Pillars (v27.0)
+## Son Geliştirmeler
+- Eski Streamlit/dashboard hattı ve kullanılmayan benchmark/verify dosyaları temizlendi.
+- Solver tarafına saatlik havalimanı kapasite baskısı ve gate çakışma mantığı eklendi.
+- Optimize sonuçlarına `decision_reason`, `slot_pressure_flag` ve `decision_summary` eklendi.
+- `/api/optimizer/explanations` endpointi açıldı.
+- Arayüzde karar kartı filtreleri, açıklama paneli, otomatik harita odaklama ve boş durum yönetimi eklendi.
 
-### 🧠 1. Federated Intelligence (Data Sovereignty)
-- **Node-Based Learning**: Utilizing `federated_node.py` to allow decentralized training of MRO (Technical Failure) and Delay Propagation models.
-- **Privacy First**: Airlines share model weights/gradients instead of sensitive raw data, achieving a **17% improvement** in failure prediction accuracy.
+## Çalıştırma
+Projede aktif çalışma ortamı `src/.venv` içindedir.
 
-### 🔋 2. V2G Energy Orchestration (Grid-Integrated)
-- **Micro-Grid Control**: `energy_grid.py` dynamically calculates the V2G (Vehicle-to-Grid) buffer from airport EV parking lots.
-- **Economic Impact**: Reduces electric aircraft recharging costs by **32%** while ensuring grid stability during peak tactical windows.
-
-### ⚖️ 3. Mathematical Trust Calibration (Human-AI)
-- **Logistic Trust Model**: `trust_auditor.py` monitors human-automation interaction to detect **Overtrust (Automation Bias)** or **Distrust**.
-- **Certification Ready**: Maps operational levels to **EASA AI Level 1-3** standards, enforcing mandatory human approval when trust thresholds are breached.
-
-### 🛰️ 4. NTN-Native Connectivity (Global Visibility)
-- **6G/NTN Interface**: Full support for **Non-Terrestrial Networks (LEO Satellite)** for polar and transoceanic flights.
-- **4D Trajectory Negotiation**: Millisecond-latency telemetry sync even in ground-station dead zones.
-
----
-
-## 🛠️ Technology Stack (Professional Grade)
-- **Core Engine:** CP-SAT (Deterministic), Quantum-Inspired GA (Stochastic), PPO Reinforcement Learning.
-- **Network Architecture:** FastAPI (Python 3.12), SQLite (WAL Mode), Multi-Agent Microservices.
-- **Security:** Adversarial Guard (Delta-Noise Resilience), Compliance Engine (Antitrust & Collusion Audit).
-- **Visualization:** Digital Twin (Three.js), Strategic KPI Dashboard (Streamlit/Glassmorphism).
-
----
-
-## 📈 System Architecture
-```mermaid
-graph TD
-    A[Aviation Singularity OS] --> B[Neural Commander v4]
-    A --> C[Ecosystem Grid v27]
-    B --> D[Federated Learning Node]
-    B --> E[Adversarial Resilience Guard]
-    C --> F[V2G Micro-Grid Orchestrator]
-    C --> G[Maritime/Land Unified Control]
-    A --> H[EASA Trust Auditor]
-    H --> I[Human-in-the-Loop Override]
-```
-
-## 🚀 Rapid Evaluation
-Ensure **Docker** is installed.
 ```bash
-docker-compose up --build
+make run
 ```
-- **Dashboard**: `http://localhost:8501`
-- **Federated Report**: `GET /api/ai/federated-report`
-- **Trust Audit**: `GET /api/certification/trust-audit`
 
----
-**Developed for the TEKNOFEST 2026 Strategic Aerospace Competition.**
-*Turning Aviation Operations into a Strategic, Sovereign Science.*
+Ardından:
+- Web UI: `http://localhost:8501`
+- Health: `GET /health`
+- KPI: `GET /api/analytics/kpi`
+- Optimize: `POST /api/optimize`
+- Explanations: `GET /api/optimizer/explanations`
+- Model Benchmark: `GET /api/analytics/model-benchmark`
+
+## Test
+```bash
+make test
+```
+
+## Veri Uretimi
+```bash
+make data
+```
+
+## Benchmark
+```bash
+make benchmark
+```
+
+## Docker
+```bash
+make docker-up
+```
+
+Production icin:
+- `API_KEY` doldur.
+- Gerekirse `DATABASE_URL` ile Postgres bagla.
+- `ALLOWED_ORIGINS` degerini acikca sinirla.
+
+## Notlar
+- `assets/models/gemma-2-2b-it-Q4_K_M.gguf` varsa AI briefing yerel model ile çalışır; yoksa güvenli fallback döner.
+- Live-sync ve narrative yüzeylerinde gerçek sistem yerine demo/simülasyon fallback’leri vardır.
