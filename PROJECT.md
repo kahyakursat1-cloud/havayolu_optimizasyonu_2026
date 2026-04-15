@@ -15,11 +15,16 @@ Proje artık konsept seviyesinden çıkıp çalışan bir ürün prototipine dö
 - Karar açıklanabilirliği backend ve frontend katmanına işlendi.
 - Test yüzeyi çekirdek, solver ve entegrasyon kapsamında yeşil hale getirildi.
 
+## Tamamlanan İleri Adımlar (v28)
+- OpenSky + Open-Meteo canlı entegrasyonu (TTL cache, offline fallback; LIVE_SYNC_ENABLED bayrağı)
+- Solver'da EASA FTL uyumlu crew duty tavanı (600dk) + duty kaynaklı iptal decision_reason'ı
+- Docker compose'a LIVE_SYNC_ENABLED env değişkeni; .env.example güncellendi
+- PDF ve XLSX karar raporu export endpoint'leri (/api/export/decision-report.{pdf,xlsx}) + UI butonları
+
 ## Kalan Yüksek Öncelikli İşler
-- Gerçek dış veri kaynaklarıyla entegrasyon
-- Solver’da crew duty/rest ve slot modeli derinleştirme
-- Deployment ve production config standardizasyonu
-- Raporlama/export akışı
+- Gerçek GDS/IATA entegrasyonu (market_intel hâlâ demo katmanda)
+- Slot modelinin tactical coordination feed'ine bağlanması
+- Prod observability (trace/metrics pipeline dışsallaştırma)
 
 ## Teknik Yığın
 - Backend: FastAPI, SQLAlchemy, SQLite
