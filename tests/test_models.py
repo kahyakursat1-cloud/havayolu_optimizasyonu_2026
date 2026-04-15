@@ -1,6 +1,6 @@
 """
 Unit tests for AI/ML components:
-  - HybridGA (fitness, selection, crossover, mutation)
+  - QuantumInspiredGA (fitness, Q-bit collapse, quantum rotation, solve)
   - AviationRLBotEnv (observation space, action application, reward shaping)
   - AviationForecastEngine (determinism, seasonal shape, 7-day coverage)
   - BayesianCausalModel (attribution logic, cyber risk scale)
@@ -59,63 +59,47 @@ def sample_flights_df():
         'saf_usage':           [0, 0, 0, 0],
         'crew_base_fatigue':   [5, 5, 3, 3],
         'is_night_flight':     [0, 0, 0, 0],
+        'market_qsi_weight':   [1.0, 1.0, 1.0, 1.0],
     }
     return pd.DataFrame(data)
 
 
 # ===========================================================================
-# HybridGA Tests
+# QuantumInspiredGA Tests
 # ===========================================================================
 
-class TestHybridGA:
+class TestQuantumInspiredGA:
     def test_fitness_positive_for_valid_schedule(self, sample_flights_df):
-        from src.optimizer.hybrid_ga import HybridGA
-        ga = HybridGA(sample_flights_df, pop_size=5, generations=1)
+        from src.optimizer.hybrid_ga import QuantumInspiredGA
+        ga = QuantumInspiredGA(sample_flights_df, pop_size=5, generations=1)
         score = ga.fitness(ga.flights)
         assert isinstance(score, float)
         assert score > -1e7, "Fitness should not be catastrophically negative for a valid schedule"
 
     def test_fitness_penalizes_cancellation(self, sample_flights_df):
-        from src.optimizer.hybrid_ga import HybridGA
-        ga = HybridGA(sample_flights_df, pop_size=5, generations=1)
+        from src.optimizer.hybrid_ga import QuantumInspiredGA
+        ga = QuantumInspiredGA(sample_flights_df, pop_size=5, generations=1)
         normal = ga.fitness(ga.flights)
         canceled = ga.flights.copy()
         canceled['is_canceled'] = 1
         score_canceled = ga.fitness(canceled)
         assert score_canceled < normal, "Canceling all flights must reduce fitness"
 
-    def test_tournament_select_returns_individual(self, sample_flights_df):
-        from src.optimizer.hybrid_ga import HybridGA
-        ga = HybridGA(sample_flights_df, pop_size=5, generations=1)
-        pop_fitness = [(ga.flights.copy(), float(i)) for i in range(5)]
-        winner = ga._tournament_select(pop_fitness, k=3)
-        assert winner is not None
-        assert isinstance(winner, pd.DataFrame)
-
-    def test_aircraft_rotation_crossover_preserves_index(self, sample_flights_df):
-        from src.optimizer.hybrid_ga import HybridGA
-        ga = HybridGA(sample_flights_df, pop_size=5, generations=1)
-        p1 = ga.flights.copy()
-        p2 = ga.flights.copy()
-        p2['assigned_ac'] = 'B737-1'
-        child = ga.aircraft_rotation_crossover(p1, p2)
-        assert set(child.index) == set(p1.index), "Crossover must not drop or add rows"
-        assert child['assigned_ac'].isin(ga._ac_list).all(), "All aircraft must be from the fleet"
-
-    def test_mutation_preserves_row_count(self, sample_flights_df):
-        from src.optimizer.hybrid_ga import HybridGA
-        ga = HybridGA(sample_flights_df, pop_size=5, generations=1)
-        ind = ga.flights.copy()
-        assert len(ga.quantum_tunneling_mutation(ind)) == len(ind)
-        assert len(ga.reversal_mutation(ind)) == len(ind)
-        assert len(ga.point_mutation(ind)) == len(ind)
+    def test_collapse_returns_dataframe(self, sample_flights_df):
+        from src.optimizer.hybrid_ga import QuantumInspiredGA
+        ga = QuantumInspiredGA(sample_flights_df, pop_size=5, generations=1)
+        collapsed = ga._collapse(ga.q_pop[0])
+        assert collapsed is not None
+        assert isinstance(collapsed, pd.DataFrame)
+        assert 'assigned_ac' in collapsed.columns
 
     def test_solve_returns_dataframe(self, sample_flights_df):
-        from src.optimizer.hybrid_ga import HybridGA
-        ga = HybridGA(sample_flights_df, pop_size=4, generations=2)
-        result = ga.solve()
+        from src.optimizer.hybrid_ga import QuantumInspiredGA
+        ga = QuantumInspiredGA(sample_flights_df, pop_size=4, generations=2)
+        result, solve_time = ga.solve()
         assert isinstance(result, pd.DataFrame)
         assert len(result) == len(sample_flights_df)
+
 
 
 # ===========================================================================
@@ -243,6 +227,25 @@ class TestForecastEngine:
         for a, b in zip(r1, r2):
             assert a["predicted_plf"] == b["predicted_plf"]
             assert a["disruption_risk"] == b["disruption_risk"]
+
+
+class TestModelBenchmarker:
+    def test_benchmark_returns_three_models(self, sample_flights_df):
+        from src.analytics.model_benchmark import model_benchmarker
+
+        benchmark = model_benchmarker.benchmark_models(sample_flights_df)
+        assert "models" in benchmark
+        names = {item["name"] for item in benchmark["models"]}
+        assert {"LogisticRegression", "XGBoost", "LSTM"} == names
+        assert benchmark["dataset"]["rows"] == len(sample_flights_df)
+
+    def test_benchmark_has_best_model_when_training_succeeds(self, sample_flights_df):
+        from src.analytics.model_benchmark import model_benchmarker
+
+        benchmark = model_benchmarker.benchmark_models(sample_flights_df)
+        ok_models = [item for item in benchmark["models"] if item.get("status") == "ok"]
+        if ok_models:
+            assert benchmark["best_model"] in {item["name"] for item in ok_models}
 
 
 # ===========================================================================

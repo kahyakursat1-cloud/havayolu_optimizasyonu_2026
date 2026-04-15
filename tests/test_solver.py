@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from src.optimizer.dt_solver import DigitalTwinSolver
+from src.optimizer.dt_solver import DigitalTwinSolver, SolverError
 
 @pytest.fixture
 def mock_flights():
@@ -18,6 +18,7 @@ def mock_flights():
         'crew_cert': ['NARROW', 'NARROW'],
         'block_time': [120, 120],
         'ac_remaining_fh': [100.0, 100.0],
+        'dist_km': [2400, 5500],
         'revenue_tl': [100000, 120000],
         'op_cost_tl': [20000, 25000],
         'fuel_cost_tl': [10000, 12000],
@@ -26,6 +27,9 @@ def mock_flights():
         'pax_connection_count': [20, 30],
         'co2_kg': [5000, 6000],
         'weather_risk': [0.0, 0.0],
+        'engine_health': [0.95, 0.92],
+        'maintenance_reason': ['', ''],
+        'market_qsi_weight': [1.0, 1.0],
         'status': ['SCHEDULED', 'SCHEDULED']
     }
     df = pd.DataFrame(data).set_index('flight_id')
@@ -34,7 +38,7 @@ def mock_flights():
 def test_solver_feasible_baseline(mock_flights):
     """Test if solver can find a feasible baseline mapping."""
     solver = DigitalTwinSolver(mock_flights)
-    result = solver.solve_baseline(max_time_sec=5)
+    result = solver.solve_with_windows()
     
     assert result is not None
     assert 'is_canceled' in result.columns
@@ -48,8 +52,26 @@ def test_solver_capacity_constraint(mock_flights):
     mock_flights.loc['TK100', 'passenger_count'] = 250 
     
     solver = DigitalTwinSolver(mock_flights)
-    result = solver.solve_baseline(max_time_sec=5)
+    result = solver.solve_with_windows()
     
     assert result is not None
     # TK100 MUST be canceled or delayed since 250 > 189 (max fleet capacity)
     assert result.loc['TK100', 'is_canceled'] == 1
+
+
+def test_solver_uses_hybrid_recovery_on_window_failure(mock_flights, monkeypatch):
+    """If CP-SAT window solve fails, the hybrid GA recovery path should return a plan."""
+
+    def _boom(self, strategy="PROFIT", max_time_sec=60):
+        raise SolverError("forced failure")
+
+    monkeypatch.setattr(DigitalTwinSolver, "solve_winning", _boom)
+
+    solver = DigitalTwinSolver(mock_flights)
+    result = solver.solve_with_windows()
+
+    assert result is not None
+    assert len(result) == 2
+    assert "assigned_aircraft" in result.columns
+    assert "hybrid_recoveries" in result.attrs
+    assert len(result.attrs["hybrid_recoveries"]) >= 1
