@@ -59,6 +59,10 @@ Aşağıdaki konular tezin kapsamı dışında tutulmuştur:
 
 Bu konular, tezde sunulan mimarinin üzerine inşa edilebilecek doğal uzantılar olup, Bölüm 10 Gelecek Çalışmalar kısmında değinilmiştir.
 
+## 1.6 Şekil 1.1 — Sistem Bağlam Diyagramı
+
+Şekil 1.1, geliştirilen sistemin dış aktörler ve servislerle ilişkisini gösterir: sol tarafta üç kullanıcı rolü (Dispeçer, Yönetici, Sistem Yöneticisi), ortada altı katmanlı platform mimarisi, sağda gerçek zamanlı veri kaynakları (OpenSky ADS-B, Open-Meteo, NOAA METAR) ve izleme katmanı (Prometheus + Grafana).
+
 ## 1.5 Terminoloji
 
 | Terim | Tanım |

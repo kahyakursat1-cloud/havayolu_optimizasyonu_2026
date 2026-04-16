@@ -61,6 +61,10 @@ Bu tez; havayolu operasyonlarında aksaklık yönetimi (IROPS) problemine, **kı
 - **Robust Optimization**: Belirsizlik kümesi tanımlama; Bertsimas ve ark. (2004)'un Γ-robust yaklaşımı.
 - **Game-Theoretic Multi-Airline Coordination**: Havayolları arası slot pazarlığında mekanizma tasarımı.
 
+### 10.4.5 Şekil 10.1 — Gelecek Çalışma Yol Haritası
+
+Şekil 10.1, kısa vade (2026–2027), orta vade (2027–2028) ve uzun vade (2028–2029) çalışmaları zaman ekseninde Gantt diyagramı olarak göstermektedir. Nisan 2026 "şimdi" noktası dikey çizgiyle işaretlenmiştir.
+
 ## 10.5 Tezin Pratik Etkisi
 
 Bu tezde geliştirilen sistem:

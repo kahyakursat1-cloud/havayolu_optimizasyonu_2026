@@ -175,13 +175,17 @@ for pattern, fname in figure_map.items():
     img_path = os.path.join(img_dir, fname)
     if not os.path.exists(img_path):
         continue
-    # "Şekil X.Y — Başlık" satırının altına görsel ekle
-    replacement = lambda m, p=img_path, k=pattern: (
-        m.group(0) + f'\n\n![{m.group(0).strip()}]({p}){{width=90%}}\n'
-    )
+    # Herhangi bir satırda "Şekil X.Y" veya "Tablo X.Y" geçiyorsa altına görsel ekle
+    def make_repl(p, pat):
+        def repl(m):
+            full_line = m.group(1)
+            cap_m = re.search(pat + r'[^\n]*', full_line)
+            caption = cap_m.group(0).strip() if cap_m else full_line.lstrip('# *').strip()
+            return m.group(0) + f'\n\n![{caption}]({p}){{width=90%}}\n'
+        return repl
     content = re.sub(
-        rf'(?m)^({pattern}[^\n]*)\n(?!\s*!\[)',
-        replacement,
+        rf'(?m)^([^\n]*{pattern}[^\n]*)\n(?!\s*!\[)',
+        make_repl(img_path, pattern),
         content
     )
 

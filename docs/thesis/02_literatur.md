@@ -119,6 +119,10 @@ Yukarıdaki incelemeden çıkan **boşluklar** şunlardır:
 
 Bu tez yukarıdaki üç boşluğu doldurmayı hedefler. Bölüm 3'te metodolojik çerçeve sunulur.
 
+## 2.11 Şekil 2.1 — Yaklaşım Karşılaştırması (Radar Analizi)
+
+Şekil 2.1, bu tezin önerdiği hibrit M yöntemini (CP-SAT + QIGA + XAI) Klasik MILP ve Deep RL referanslarıyla yedi boyutta karşılaştırır: Optimalite, Hız, Açıklanabilirlik, Canlı Veri, EASA Uyum, Ölçek. M yöntemi Açıklanabilirlik ve EASA Uyum boyutlarında belirgin üstünlük göstermektedir.
+
 ## 2.10 Problem Tanımı — Biçimsel
 
 Operasyonel günde çözülen yeniden-çizelgeleme problemi şu şekilde tanımlanır:

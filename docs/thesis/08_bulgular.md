@@ -87,7 +87,7 @@ Combined stress:    B1:47% B2:31% B3:33% M:24%
 
 **Yorum**: M, **ağır bozulma** koşullarında (combined stress) B₂'ye göre daha belirgin fark yaratır; bu QIGA'nın infeasibility sonrası iyileştirme gücünü gösterir.
 
-## 8.5 Tablo 8.2 — Canlı Veri Entegrasyonu Gecikme Ölçümleri
+## 8.5 Şekil 8.5 — Canlı Veri Entegrasyonu Gecikme Ölçümleri ve Tablo 8.2
 
 OpenSky + Open-Meteo + NOAA canlı çağrıları (100 istek, p50/p95/p99):
 
@@ -121,7 +121,13 @@ pax_mobility_index     █ 0.01
 
 **Bulgu**: Hava riski ve mürettebat yorgunluğu baskın; bu EASA beklentileriyle örtüşür (FTL ve meteorological factors IATA delay codes içinde ilk iki kategoridir).
 
-## 8.7 Ölçeklenebilirlik Deneyleri
+**Şekil 8.6 — Karar Gerekçe Dağılımı**: 150 uçuşun iptal/gecikme nedenlerinin kategori bazlı dağılımı (CREW_DUTY_SATURATION, WEATHER_CLOSURE, GATE_UNAVAILABLE, SLOT_CONFLICT, TECHNİCAL_FAILURE).
+
+**Şekil 8.9 — Türkiye Hava Yolu Ağı**: 14 havalimanının simülasyon ağı; mavi: aktif rota, kırmızı: IST hub, sarı: yüksek yoğunluklu.
+
+## 8.7 Şekil 8.7 — Ölçeklenebilirlik Deneyleri
+
+Şekil 8.7, uçuş sayısına (50 → 3000) karşı CP-SAT çözüm süresi ve optimality gap eğrisini göstermektedir.
 
 | Uçuş sayısı | Değişken sayısı | CP-SAT süre (s) | Optimality gap @ 60s |
 |---|---|---|---|
@@ -133,7 +139,7 @@ pax_mobility_index     █ 0.01
 
 **Bulgu**: 500 uçuşa kadar hibrit pratik. 1500+ için `INDUSTRY_ROADMAP.md` Faz F'de tanımlanan **rolling horizon** + **multi-fleet partition** gereklidir.
 
-## 8.8 FTL Doğrulama Deneyi
+## 8.8 Şekil 8.4 — FTL Doğrulama Deneyi
 
 **Senaryo**: Tek mürettebata $c_1$ ait 2 uçuş $f_1, f_2$ her biri 400 dk block_time.
 **Beklenen**: $\sum y \cdot \text{block} = 800 > 600$ → en az 1 iptal, `decision_reason="CREW_DUTY_SATURATION"`.
@@ -148,7 +154,7 @@ Result: f1.is_canceled=False, f2.is_canceled=True
 
 `test_solver_enforces_crew_duty_cap` bu davranışı otomatize ediyor; 10/10 deterministik geçiyor.
 
-## 8.9 API Performans Testi
+## 8.9 Şekil 8.8 — API Performans Testi
 
 Locust ile 50 concurrent dispatcher, 10 dakika:
 
@@ -162,7 +168,7 @@ Locust ile 50 concurrent dispatcher, 10 dakika:
 
 **Yorum**: Solver endpoint'i p99'da zaman sınırına çok yakın. Üretimde Celery worker pool'a çıkarılması önerilir (Faz F).
 
-## 8.10 XAI Kullanılabilirlik Mini Deneyi
+## 8.10 Şekil 8.10 — XAI Kullanılabilirlik Mini Deneyi
 
 5 havacılık mühendisi (TEKNOFEST değerlendirme jürisi örneklemi dışında) ile anket:
 
@@ -175,7 +181,7 @@ Locust ile 50 concurrent dispatcher, 10 dakika:
 
 **Bulgu**: Açıklanabilirlik çıktıları dispeçer güvenini pozitif etkiler; SHAP waterfall tercih edilen görselleştirme.
 
-## 8.11 Canlı Veri vs Sentetik Senaryo Karşılaştırması
+## 8.11 Şekil 8.11 — Canlı Veri vs Sentetik Senaryo Karşılaştırması
 
 Aynı 150 uçuş, iki koşul:
 

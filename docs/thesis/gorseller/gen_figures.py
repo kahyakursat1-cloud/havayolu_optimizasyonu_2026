@@ -14,12 +14,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.patches import FancyBboxPatch
-from matplotlib.lines import Line2D
-from matplotlib.gridspec import GridSpec
 import matplotlib.ticker as mticker
 import seaborn as sns
 import plotly.graph_objects as go
-import plotly.express as px
 from plotly.subplots import make_subplots
 
 OUT = os.path.dirname(os.path.abspath(__file__))
@@ -370,12 +367,6 @@ def fig_4_1_architecture():
 def fig_4_2_auth_flow():
     fig = go.Figure()
     # Sequence diagram benzeri Sankey
-    nodes = ["Kullanıcı", "POST /login", "fastapi-users\nbcrypt", "JWT Token",
-             "Korunan EP", "require_role()", "İş Mantığı", "403 Forbidden"]
-    colors = [PALETTE["slate"], PALETTE["primary"], PALETTE["secondary"],
-              PALETTE["success"], PALETTE["primary"], PALETTE["warning"],
-              PALETTE["success"], PALETTE["danger"]]
-
     # Basit flow şeması olarak çiz — matplotlib daha uygun
     plt.close("all")
     fig, ax = plt.subplots(figsize=(11, 5))
@@ -703,11 +694,6 @@ def fig_6_2_pipeline():
               "CP-SAT\nÇözücü", "QIGA\nİyileştirici", "XAI\nKatmanı", "Çıktı"]
     colors_hex = [PALETTE["secondary"], PALETTE["primary"], PALETTE["purple"],
                   "#1E3A5F", PALETTE["purple"], PALETTE["success"], PALETTE["slate"]]
-    sub = ["ADS-B · METAR\nSentetik", "11 özellik\nNormalize",
-           "7 günlük\ntahmin", "FTL kısıtı\n60s limit",
-           "50 birey\n100 nesil", "SHAP · Bayesian\nCounterfactual",
-           "UI · PDF\nAudit log"]
-
     fig = go.Figure(go.Funnel(
         y=stages, x=[100, 92, 88, 85, 83, 80, 78],
         textinfo="label",
@@ -752,7 +738,6 @@ def fig_7_1_project_tree():
     ]
 
     for x, y, text, color, bold, fs in tree:
-        prefix = "📁 " if bold and x < 0.6 else "  "
         ax.text(x, y, text, fontsize=fs, color=color,
                 fontweight="bold" if bold else "normal",
                 fontfamily="DejaVu Sans Mono")
@@ -898,10 +883,12 @@ def fig_8_2_cancellation():
         title=dict(text="Şekil 8.2 — Stres Senaryolarında İptal Oranı Karşılaştırması (%)", x=0.5),
         yaxis_title="İptal Oranı (%)",
         xaxis_title="Senaryo",
-        legend=dict(orientation="h", y=-0.18, font=dict(size=11)),
+        legend=dict(orientation="h", y=-0.22, font=dict(size=11)),
     )
-    fig.update_yaxes(range=[0, 56])
-    save_plotly(fig, "fig_8_2_cancellation.png", w=950, h=520)
+    fig.update_layout(margin=dict(l=60, r=40, t=70, b=110))
+    fig.update_yaxes(range=[0, 60])
+    fig.update_xaxes(tickangle=-20)
+    save_plotly(fig, "fig_8_2_cancellation.png", w=980, h=540)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -1110,15 +1097,17 @@ def fig_8_6_decision_reasons():
     fig.add_trace(go.Bar(
         y=reasons[::-1], x=counts[::-1], orientation="h",
         marker=dict(color=rcolors[::-1], line=dict(width=0)),
-        opacity=0.88, text=counts[::-1], textposition="outside",
+        opacity=0.88, text=counts[::-1], textposition="inside",
+        insidetextanchor="end",
     ), row=1, col=2)
     fig.update_layout(
         **PLOTLY_TEMPLATE["layout"],
         title=dict(text="Şekil 8.6 — Karar Sebebi ve Uçuş Durumu Dağılımı (M Hibrit, 150 uçuş)", x=0.5),
         showlegend=False,
-        height=460,
+        height=480,
     )
-    save_plotly(fig, "fig_8_6_decision_reasons.png", w=950, h=460)
+    fig.update_layout(margin=dict(l=200, r=40, t=70, b=60))
+    save_plotly(fig, "fig_8_6_decision_reasons.png", w=980, h=480)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -1140,9 +1129,12 @@ def fig_8_7_scalability():
                      alpha=0.12, color=PALETTE["success"])
     ax1.axhline(y=5, color=PALETTE["success"], lw=1.8, linestyle="--",
                 label="Pratik eşik (%5)")
-    for xi, yi in zip(n, gap):
-        ax1.annotate(f" {yi}%", xy=(xi, yi), fontsize=9, color=PALETTE["primary"],
-                     va="bottom", ha="center")
+    offsets = [(-0.15, 8), (0.12, 8), (0.0, -14), (0.0, 8), (0.0, 8)]
+    for (xi, yi), (xo, yo) in zip(zip(n, gap), offsets):
+        ax1.annotate(f"{yi}%", xy=(xi, yi),
+                     xytext=(0, yo), textcoords="offset points",
+                     fontsize=8.5, color=PALETTE["primary"],
+                     va="bottom", ha="center", fontweight="bold")
     ax1.set_xscale("log"); ax1.set_xlabel("Uçuş Sayısı (log ölçek)", fontsize=11)
     ax1.set_ylabel("Optimality Gap (%) @ 60s", fontsize=11)
     ax1.set_title("Optimality Gap", fontsize=11)
@@ -1292,7 +1284,7 @@ def fig_8_11_live_vs_synthetic():
     fig, axes = plt.subplots(1, 4, figsize=(13, 4.5), sharey=False)
     for ax, m, sv, lv, es, el in zip(axes, metrics, synthetic, live, errs_s, errs_l):
         x = [0, 1]
-        bars = ax.bar(x, [sv, lv], color=[PALETTE["primary"], PALETTE["secondary"]],
+        ax.bar(x, [sv, lv], color=[PALETTE["primary"], PALETTE["secondary"]],
                       yerr=[es, el], capsize=7, error_kw={"elinewidth": 2.0, "ecolor": PALETTE["muted"]},
                       edgecolor="white", lw=0.5, alpha=0.88, width=0.55)
         ax.set_xticks(x); ax.set_xticklabels(["Sentetik", "Canlı"], fontsize=9)

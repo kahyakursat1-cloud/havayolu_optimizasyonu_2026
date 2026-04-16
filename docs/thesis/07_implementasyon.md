@@ -66,6 +66,10 @@ havayolu_optimizasyonu_2026/
 └── .env.example
 ```
 
+### 7.1.1 Şekil 7.1 — Proje Dizin Yapısı
+
+Şekil 7.1, yukarıdaki dizin ağacını katmanlı olarak görselleştirir: her klasör renk kodlu bileşen grubuna (API, optimizer, generator, analytics, web, tests) ayrılmış; satır sayıları ve bağımlılık yönleri gösterilmiştir.
+
 ## 7.2 FastAPI Uygulama Çekirdeği
 
 ### 7.2.1 Lifespan Hook
@@ -271,6 +275,10 @@ def fetch_real_metar(self, airport_code: str) -> dict:
 - **CLOSED**: Normal; istekler geçer
 - **OPEN**: 5 ardışık hata → 60 saniye tüm istekleri blok
 - **HALF-OPEN**: 60 s sonra 1 test isteği; başarılıysa CLOSED, hata ise tekrar OPEN
+
+#### Şekil 7.2 — Circuit Breaker Durum Diyagramı
+
+Şekil 7.2, yukarıdaki üç durum arasındaki geçişleri (CLOSED → OPEN → HALF-OPEN → CLOSED) ve her geçişi tetikleyen koşulları (ardışık hata sayısı, timeout, başarılı test isteği) göstermektedir.
 
 ## 7.7 Frontend Mimarisi
 

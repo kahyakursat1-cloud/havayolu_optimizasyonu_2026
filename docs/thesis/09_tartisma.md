@@ -33,6 +33,10 @@ EASA (2023) AMC 20-42, AI/ML tabanlı sistemleri şu eksende değerlendirir:
 
 **Sonuç**: Sistem EASA AMC 20-42'nin **7/8** gereksinimini karşılıyor; drift monitoring tek kalan açık. Bu, Bölüm 10'da gelecek çalışma olarak belirtilmiştir.
 
+### 9.2.1 Şekil 9.1 — EASA AMC 20-42 Uyum Durumu
+
+Şekil 9.1, 8 AMC 20-42 gereksinimi için mevcut uyum düzeyini (Tam / Kısmi / Eksik) yatay çubuk grafikle göstermektedir.
+
 ## 9.3 Mimari Kararların Savunması
 
 ### 9.3.1 Neden CP-SAT, Gurobi/CPLEX Değil?
