@@ -63,7 +63,7 @@ Under mild mutation ($\Delta\theta \leq \pi/4$), empirical testing on 150-flight
 
 \subsection*{Analytical Statement: Warm-Start Monotonicity}
 
-\begin{theorem}
+\begin{empiricalproperty}
 Let $S_{\text{CP}} = \text{CP-SAT}(\text{instance})$ be the feasible solution returned by CP-SAT. When QIGA is initialized with elite seed $S_0 = S_{\text{CP}}$ and uses elitist selection:
 \begin{equation}
 S_{\text{elite}}(t) = \begin{cases}
@@ -78,10 +78,10 @@ Then, by the elitist selection mechanism:
 \end{equation}
 
 Under mild mutation and small perturbations ($\Delta\theta \leq \pi/8$), empirical testing shows that elite solutions consistently remain in the feasible region $\mathcal{F}$ across generations (see Section~\ref{sec:experiments} for validation rates).
-\end{theorem}
+\end{empiricalproperty}
 
 \begin{proof}
-We prove this in two parts:
+We analyze this in two parts:
 
 \textbf{Part 1: Profit Monotonicity.}
 
@@ -102,12 +102,20 @@ Elitist selection ensures $S_{\text{elite}}(0) = S_{\text{CP}} \in \mathcal{F}$ 
 \item Select: $S_{\text{elite}}(t) = S_{\text{elite}}(t-1)$ if mutation fails feasibility check, else $S_{\text{elite}}(t) = S_t$ if $\Pi(S_t) > \Pi(S_{\text{elite}}(t-1))$.
 \end{enumerate}
 
-Let $E_t = \{S_{\text{elite}}(t) \in \mathcal{F}\}$ be the event that the elite at generation $t$ is feasible. By induction:
+Let $E_t = \{S_{\text{elite}}(t) \in \mathcal{F}\}$ be the event that the elite at generation $t$ is feasible. By construction:
 \begin{align}
-\mathbb{P}[E_0] &= 1 \quad \text{(Lemma 1)}\\
-\mathbb{P}[E_t | E_{t-1}] &\geq (1 - \epsilon) \cdot 1 + \epsilon \cdot 1 = 1 \quad \text{(retention or feasible mutation)}\\
-\Rightarrow \mathbb{P}[E_t] &\geq 1 \quad \forall t \geq 0
+\mathbb{P}[E_0] &= 1 \quad \text{(Lemma 1: CP-SAT returns feasible solution)}\\
+S_{\text{elite}}(t) &= \begin{cases} S_{\text{elite}}(t-1) & \text{if } S_t \text{ infeasible or worse} \\ S_t & \text{if } S_t \text{ feasible and better} \end{cases}
 \end{align}
+
+Since elitist selection retains the elite whenever mutation produces an infeasible offspring, we have:
+$$\mathbb{P}[E_t] = 1 \quad \forall t \geq 0 \quad \text{(by design of elitist selection)}$$
+
+In practice, feasibility is maintained empirically because:
+\begin{itemize}
+\item Elite is always retained if mutation fails (P $= 1$ by selection rule)
+\item Elite is preserved across all generations by construction
+\end{itemize}
 
 By construction of elitist selection, feasible solutions are retained. Mutation-generated offspring inherit feasibility with high empirical frequency when mutation severity is mild (as empirically observed in Section~\ref{sec:experiments}). In practical experiments with $\epsilon \approx 0.02$ and $T \leq 200$ generations, feasibility is maintained across 99%+ of test runs, validating the robustness of the approach.
 \end{proof}
