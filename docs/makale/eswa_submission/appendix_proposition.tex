@@ -17,11 +17,9 @@ S_0 &= S_{\text{CP}} \quad \text{(CP-SAT solution)}\\
 S_t &= \text{Mutation}_t(S_{t-1}) \quad \text{(QIGA-evolved solution at generation } t \text{)}
 \end{align}
 
-\subsection*{Lemma 1 (CP-SAT Feasibility)}
+\subsection*{Observation 1: CP-SAT Feasibility}
 
-\begin{lemma}
-The CP-SAT solver returns a solution $S_{\text{CP}} \in \mathcal{F}$.
-\end{lemma}
+\textbf{Observation:} The CP-SAT solver returns a feasible solution $S_{\text{CP}} \in \mathcal{F}$.
 
 \begin{proof}
 By construction, CP-SAT enforces all constraints C$_1$–C$_{10}$ with zero tolerance. The solver's termination guarantees either:
@@ -32,15 +30,13 @@ By construction, CP-SAT enforces all constraints C$_1$–C$_{10}$ with zero tole
 For the IROPS problem, a feasible solution always exists (empty schedule is feasible), hence CP-SAT returns $S_{\text{CP}} \in \mathcal{F}$.
 \end{proof}
 
-\subsection*{Lemma 2 (Feasibility-Preserving Mutation)}
+\subsection*{Observation 2: Feasibility-Preserving Mutation}
 
-\begin{lemma}
-If $S \in \mathcal{F}$, the QIGA mutation operator $M_\epsilon(S)$ satisfies:
+\textbf{Observation:} When a feasible solution $S \in \mathcal{F}$ undergoes QIGA mutation with rotation angle $\Delta\theta \leq \pi/8$ (mild perturbation), empirical testing shows that offspring remain feasible with high probability:
 \begin{equation}
 \mathbb{P}[M_\epsilon(S) \in \mathcal{F}] \geq 1 - \epsilon
 \end{equation}
-where $\epsilon \in (0, 1)$ is the mutation severity parameter and the mutation operates on qubits with rotation angle $\Delta\theta \leq \pi/4$ (mild perturbation).
-\end{lemma}
+where $\epsilon \in (0, 1)$ is the empirically-observed mutation failure rate.
 
 \begin{proof}
 The QIGA mutation consists of:
@@ -58,7 +54,7 @@ Let $\mathcal{N}(S) = \{S' : |S' - S| \leq k_\text{mut}\}$ denote the $k_\text{m
 \item Continuity (C$_5$): Nearest-neighbor rerouting preserves continuation chain.
 \end{itemize}
 
-Under mild mutation ($\Delta\theta \leq \pi/4$), empirical testing on 150-flight instances shows $P[\text{feasibility}] \approx 0.98$, hence $\epsilon \approx 0.02$. Formally, this follows from the volume-preservation property of rotation matrices in quantum gates.
+Under mild mutation ($\Delta\theta \leq \pi/4$), empirical testing on 150-flight instances shows $P[\text{feasibility}] \approx 0.98$, hence $\epsilon \approx 0.02$. This is consistent with the volume-preservation property of rotation matrices in quantum gates.
 \end{proof}
 
 \subsection*{Analytical Statement: Warm-Start Monotonicity}
@@ -96,9 +92,9 @@ This holds regardless of mutation success, provided elite is retained. At $t=0$,
 
 \textbf{Part 2: Feasibility Preservation.}
 
-Elitist selection ensures $S_{\text{elite}}(0) = S_{\text{CP}} \in \mathcal{F}$ (Lemma 1). At each generation $t$:
+Elitist selection ensures $S_{\text{elite}}(0) = S_{\text{CP}} \in \mathcal{F}$ (Observation 1). At each generation $t$:
 \begin{enumerate}
-\item Mutate: $S_t \sim M_\epsilon(S_{\text{elite}}(t-1))$ with $\mathbb{P}[S_t \in \mathcal{F}] \geq 1 - \epsilon$ (Lemma 2).
+\item Mutate: $S_t \sim M_\epsilon(S_{\text{elite}}(t-1))$ with $\mathbb{P}[S_t \in \mathcal{F}] \geq 1 - \epsilon$ (Observation 2).
 \item Select: $S_{\text{elite}}(t) = S_{\text{elite}}(t-1)$ if mutation fails feasibility check, else $S_{\text{elite}}(t) = S_t$ if $\Pi(S_t) > \Pi(S_{\text{elite}}(t-1))$.
 \end{enumerate}
 
@@ -137,7 +133,7 @@ Table~\ref{tab:prop1_validation} empirically validates the property on 150-fligh
 
 \begin{table}[H]
 \centering
-\caption{Empirical validation of Proposition 1 (100 independent runs).}
+\caption{Empirical validation of warm-start robustness (100 independent runs).}
 \label{tab:prop1_validation}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -151,4 +147,4 @@ Generations to improve $S_{\text{CP}}$ & 18 & 7 & 3 & 64 \\
 \end{tabular}
 \end{table}
 
-Across all runs, the guarantee holds: no violations, monotonic profit, deterministic feasibility.
+Across all 100 runs, the empirical pattern is consistent: no violations observed, monotonic profit across generations, and feasibility maintained by elitist selection design.
