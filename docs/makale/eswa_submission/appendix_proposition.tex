@@ -5,7 +5,7 @@
 \section{Analytical Support for Empirical Property 1: Warm-Start Feasibility Preservation}
 \label{app:prop1}
 
-\textit{Disclaimer: This appendix provides mathematical intuition under simplifying assumptions (e.g., small $\epsilon$ mutation, quasi-stationary feasible region). It is not intended as a formal proof and should not be interpreted as a guarantee of the claimed property. The property itself is empirically validated through extensive experiments (see Section~\ref{sec:experiments}). Readers should treat the following analysis as supporting intuition for why warm-start initialization preserves feasibility in practice, not as a rigorous theoretical result.}
+\textit{Disclaimer: This appendix provides mathematical intuition under simplifying assumptions (e.g., small $\epsilon$ mutation, quasi-stationary feasible region). It is not intended as a  proof and should not be interpreted as a guarantee of the claimed property. The property itself is empirically validated through extensive experiments (see Section~\ref{sec:experiments}). Readers should treat the following analysis as supporting intuition for why warm-start initialization preserves feasibility in practice, not as a rigorous theoretical result.}
 
 \subsection*{Definitions}
 
@@ -100,7 +100,7 @@ Elitist selection ensures $S_{\text{elite}}(0) = S_{\text{CP}} \in \mathcal{F}$ 
 
 Let $E_t = \{S_{\text{elite}}(t) \in \mathcal{F}\}$ be the event that the elite at generation $t$ is feasible. By construction:
 \begin{align}
-\mathbb{P}[E_0] &= 1 \quad \text{(Lemma 1: CP-SAT returns feasible solution)}\\
+\mathbb{P}[E_0] &= 1 \quad \text{(Observation 1: CP-SAT returns feasible solution)}\\
 S_{\text{elite}}(t) &= \begin{cases} S_{\text{elite}}(t-1) & \text{if } S_t \text{ infeasible or worse} \\ S_t & \text{if } S_t \text{ feasible and better} \end{cases}
 \end{align}
 
