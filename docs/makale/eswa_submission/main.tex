@@ -299,7 +299,7 @@ The model has $O(|F| \cdot (|K| + |C|))$ variables and $O(|F|^2)$ constraints. F
 
 \subsection{Overview}
 
-Our hybrid approach combines the strengths of two different algorithm families. First, we use an exact constraint solver (CP-SAT) to find a solution that definitely satisfies all regulatory constraints---it might not be optimal, but it's safe. Then, we use an evolutionary algorithm (QIGA) to explore nearby solutions and improve profit, but always staying within the feasible region established by the first stage. This two-stage approach addresses the core trade-off: exact solvers guarantee feasibility but may timeout on large instances, while evolutionary algorithms are fast but can violate constraints. By running them in sequence, initialized carefully, we get the best of both.
+Our hybrid approach combines the strengths of two different algorithm families. First, we use an exact constraint solver (CP-SAT) to find a solution that definitely satisfies all regulatory constraints---it might not be optimal, but it's safe. Then, we use an evolutionary algorithm (QIGA) to explore nearby solutions and improve profit, but consistently staying within the feasible region established established by the first stage. This two-stage approach addresses the core trade-off: exact solvers guarantee feasibility but may timeout on large instances, while evolutionary algorithms are fast but can violate constraints. By running them in sequence, initialized carefully, we get the best of both.
 
 \begin{figure}[!ht]
 \centering
@@ -362,18 +362,18 @@ For each flight, the algorithm can decide: keep the original assignment, add a d
 \label{eq:fitness}
 \end{equation}
 
-A high $\lambda$ (penalty for violations) ensures that solutions generated during evolution stay feasible. The adaptive rotation angle adjustments push the population toward high-fitness regions while maintaining diversity \cite{han2002}.
+A high $\lambda$ (penalty for violations) aims to keep solutions feasible during evolution. The adaptive rotation angle adjustments push the population toward high-fitness regions while maintaining diversity \cite{han2002}.
 
 \subsection{Warm-Start: The Critical Link}
 
-The key insight is how we initialize QIGA. Rather than starting with random solutions, we use $S_{\mathrm{CP}}$ as the first individual in the population, then generate 19 variations by randomly perturbing assignments by small amounts. This "seeding" ensures three things: (i)~the population starts in a feasible region, (ii)~the evolutionary search never has to explore far from good solutions, and (iii)~elitist selection inherently preserves at least the CP-SAT solution's quality across all generations by design.
+The key insight is how we initialize QIGA. Rather than starting with random solutions, we use $S_{\mathrm{CP}}$ as the first individual in the population, then generate 19 variations by randomly perturbing assignments by small amounts. This "seeding" creates conditions for three behaviors: (i)~the population starts in a feasible region, (ii)~the evolutionary search never has to explore far from good solutions, and (iii)~elitist selection inherently preserves at least the CP-SAT solution's quality across all generations by design.
 
 \begin{empiricalproperty}[Warm-Start Feasibility Preservation]
 \label{prop:warm}
 When QIGA is initialized with a feasible solution $S_{\mathrm{CP}}$ from CP-SAT and uses elitist selection (never discarding the best solution), the final solution $S_{\mathrm{M}}$ empirically maintains feasibility and objective value at least as good as $S_{\mathrm{CP}}$. This pattern is observed consistently across all tested instances and scenarios.
 \end{empiricalproperty}
 
-This empirical robustness is critical: it enables dispatchers to use warm-started evolutionary search as a safe refinement tool, not a wild card that could produce an infeasible or worse solution. The elitist selection mechanism ensures this by design---the best solution is never discarded.
+This empirical robustness is critical: it enables dispatchers to use warm-started evolutionary search as a safe refinement tool, not a wild card that could produce an infeasible or worse solution. The elitist selection mechanism maintains this by construction---the best solution is never discarded.
 
 \begin{corollary}
 The hybrid method M is Pareto-dominant over standalone CP-SAT (B$_2$) in the feasibility--quality space: it maintains identical feasibility guarantees (all hard constraints satisfied via $S_{\mathrm{CP}}$) while achieving equal or superior objective value.
@@ -855,7 +855,7 @@ These metrics confirm that SHAP's mapping between features and constraints is no
 
 \subsection{Positioning Against Literature}
 
-Classical optimization (column generation, MILP) guarantees global optimality but requires hours on large instances---impractical for disruption recovery. CP-SAT (our core solver) achieves global optimality in seconds on moderate instances (300--500 flights), as Section~\ref{sec:realdata} demonstrates: a realistic 300-flight recovery completes in <1 millisecond with global optimality. This performance eliminates the time-quality trade-off that classical approaches face. Pure machine learning approaches (neural networks, SVMs) predict fast but offer no feasibility guarantees---a crew schedule might be profitable but regulatory-infeasible. Our CP-SAT foundation ensures every recommendation satisfies hard constraints, essential for certification and regulatory compliance (EASA AMC 20-42).
+Classical optimization (column generation, MILP) guarantees global optimality but requires hours on large instances---impractical for disruption recovery. CP-SAT (our core solver) achieves global optimality in seconds on moderate instances (300--500 flights), as Section~\ref{sec:realdata} demonstrates: a realistic 300-flight recovery completes in <1 millisecond with global optimality. This performance eliminates the time-quality trade-off that classical approaches face. Pure machine learning approaches (neural networks, SVMs) predict fast but offer no feasibility guarantees---a crew schedule might be profitable but regulatory-infeasible. Our CP-SAT foundation is designed so that recommendations satisfy hard constraints, essential for certification and regulatory compliance (EASA AMC 20-42).
 
 \subsection{Why Warm-Start Matters and When It Applies}
 
@@ -955,7 +955,7 @@ Kruskal-Wallis test across all runs: $H = 8.74$, $p = 0.003$. Pairwise Mann-Whit
 \begin{enumerate}
     \item \textbf{Synthetic flight data:} Real-world validation uses IATA-calibrated synthetic data (Section~\ref{sec:realdata}), not historical airline operations. While the data is calibrated against published load factors and route networks, generalization to specific airline networks with different crew bases, maintenance scheduling, or seasonal patterns requires empirical validation on proprietary datasets. This is a fundamental limitation: optimization results on synthetic instances may not fully predict production performance.
 
-    \item \textbf{Simplified crew duty modeling:} The model enforces a conservative FTL bound (600 min) rather than the full EASA FDP (Flight Duty Period) table, which includes duty time, rest requirements, and fatigue-risk mitigation rules. While this simplification ensures safety-critical feasibility, it may be overly restrictive and exclude valid schedules that the full regulation permits. Production deployment would require integration with airline crew management systems using real FDP tables.
+    \item \textbf{Simplified crew duty modeling:} The model enforces a conservative FTL bound (600 min) rather than the full EASA FDP (Flight Duty Period) table, which includes duty time, rest requirements, and fatigue-risk mitigation rules. While this simplification empirically maintains safety-critical feasibility, it may be overly restrictive and exclude valid schedules that the full regulation permits. Production deployment would require integration with airline crew management systems using real FDP tables.
 
     \item \textbf{Small XAI user study:} The explainability evaluation involved 5 aviation engineers, sufficient for qualitative assessment but insufficient for statistical generalization to the broader dispatcher population. Larger studies (15--20 participants) with representative dispatcher roles are needed for production deployment.
 
