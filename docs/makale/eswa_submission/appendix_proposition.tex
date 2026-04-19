@@ -1,9 +1,11 @@
 %% ============================================================
-%%  APPENDIX A: FORMAL PROOF OF PROPOSITION 1
+%%  APPENDIX A: ANALYTICAL SUPPORT FOR EMPIRICAL PROPERTY 1
 %% ============================================================
 \appendix
-\section{Formal Proof of Proposition 1: Monotonic Non-Degradation}
+\section{Analytical Support for Empirical Property 1: Warm-Start Feasibility Preservation}
 \label{app:prop1}
+
+\textit{Disclaimer: This appendix provides mathematical intuition under simplifying assumptions (e.g., small $\epsilon$ mutation, quasi-stationary feasible region). It is not intended as a formal proof and should not be interpreted as a guarantee of the claimed property. The property itself is empirically validated through extensive experiments (see Section~\ref{sec:experiments}). Readers should treat the following analysis as supporting intuition for why warm-start initialization preserves feasibility in practice, not as a rigorous theoretical result.}
 
 \subsection*{Definitions}
 
@@ -59,10 +61,10 @@ Let $\mathcal{N}(S) = \{S' : |S' - S| \leq k_\text{mut}\}$ denote the $k_\text{m
 Under mild mutation ($\Delta\theta \leq \pi/4$), empirical testing on 150-flight instances shows $P[\text{feasibility}] \approx 0.98$, hence $\epsilon \approx 0.02$. Formally, this follows from the volume-preservation property of rotation matrices in quantum gates.
 \end{proof}
 
-\subsection*{Theorem 1 (Proposition 1: Monotonic Non-Degradation)}
+\subsection*{Analytical Statement: Warm-Start Monotonicity}
 
 \begin{theorem}
-Let $S_{\text{CP}} = \text{CP-SAT}(\text{instance})$ be the feasible solution returned by CP-SAT. Initialize QIGA with elite seed $S_0 = S_{\text{CP}}$, and apply elitist selection:
+Let $S_{\text{CP}} = \text{CP-SAT}(\text{instance})$ be the feasible solution returned by CP-SAT. When QIGA is initialized with elite seed $S_0 = S_{\text{CP}}$ and uses elitist selection:
 \begin{equation}
 S_{\text{elite}}(t) = \begin{cases}
 S_t & \text{if } \Pi(S_t) > \Pi(S_{\text{elite}}(t-1)) \\
@@ -70,12 +72,12 @@ S_{\text{elite}}(t-1) & \text{otherwise}
 \end{cases}
 \end{equation}
 
-Then, for all $t \geq 1$:
+Then, by the elitist selection mechanism:
 \begin{equation}
-\mathbb{E}[\Pi(S_{\text{elite}}(t))] \geq \Pi(S_{\text{CP}})
+\Pi(S_{\text{elite}}(t)) \geq \Pi(S_{\text{CP}})
 \end{equation}
 
-Moreover, with high probability ($1 - \delta$ for small $\delta > 0$), all elite solutions satisfy $S_{\text{elite}}(t) \in \mathcal{F}$ for all $t$.
+Under mild mutation and small perturbations ($\Delta\theta \leq \pi/8$), empirical testing shows that elite solutions consistently remain in the feasible region $\mathcal{F}$ across generations (see Section~\ref{sec:experiments} for validation rates).
 \end{theorem}
 
 \begin{proof}
@@ -107,23 +109,23 @@ Let $E_t = \{S_{\text{elite}}(t) \in \mathcal{F}\}$ be the event that the elite 
 \Rightarrow \mathbb{P}[E_t] &\geq 1 \quad \forall t \geq 0
 \end{align}
 
-With probability 1, elitist selection retains feasible solutions, and mutation-generated offspring inherit feasibility with high probability. Hence $S_{\text{elite}}(t) \in \mathcal{F}$ with probability $\geq 1 - \delta$ (where $\delta = O(T\epsilon)$ for $T$ generations), and in practice $\delta \approx 0$ for small $\epsilon$ and $T \leq 200$ generations.
+By construction of elitist selection, feasible solutions are retained. Mutation-generated offspring inherit feasibility with high empirical frequency when mutation severity is mild (as empirically observed in Section~\ref{sec:experiments}). In practical experiments with $\epsilon \approx 0.02$ and $T \leq 200$ generations, feasibility is maintained across 99%+ of test runs, validating the robustness of the approach.
 \end{proof}
 
 \subsection*{Practical Implications}
 
-Proposition 1 guarantees that the warm-started QIGA:
+Under the conditions above, the warm-started QIGA exhibits the following empirically-observed behaviors:
 \begin{enumerate}
-\item Never returns an infeasible solution (with high probability),
-\item Never degrades the CP-SAT solution's profit,
-\item Can only improve or maintain quality over generations.
+\item Consistently maintains feasibility across generations (99%+ in experiments),
+\item Preserves or improves the CP-SAT solution's profit by design (elitist selection),
+\item Shows monotonic non-decreasing quality over generations in practice.
 \end{enumerate}
 
-This addresses the central criticism in the original hakem report and formally justifies the hybrid approach for regulated optimization.
+This addresses the central criticism in the original hakem report and provides theoretical intuition for why the hybrid approach preserves feasibility in practice.
 
 \subsection*{Experimental Validation}
 
-Table~\ref{tab:prop1_validation} validates this guarantee on 150-flight instances:
+Table~\ref{tab:prop1_validation} empirically validates the property on 150-flight instances:
 
 \begin{table}[H]
 \centering

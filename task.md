@@ -1,4 +1,4 @@
-# 📝 TEKNOFEST Havayolu Dijital İkizi - Görev Listesi
+# 📝 Havayolu Operasyonel Dijital İkizi - Görev Listesi (v2026.4)
 
 ## 🏗️ Aşama 1: Gerçekçi Simülasyon (Realism)
 - [x] `synthetic_env.py` upgrade (Crew, Maintenance, Delays)

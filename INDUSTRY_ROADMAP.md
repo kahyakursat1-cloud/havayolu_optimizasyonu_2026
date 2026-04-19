@@ -1,6 +1,6 @@
 # Endüstri Standardına Taşıma Yol Haritası
 
-**Mevcut durum**: TEKNOFEST jürisine savunulabilir çalışan prototip (v28).
+**Mevcut durum**: Tam kapsamlı, çalışan bir dijital ikiz ve optimizasyon prototipi (v28).
 **Hedef**: Gerçek bir havayolu operasyon merkezinde production olarak koşabilecek ürün.
 **Tahmini süre**: 6–12 ay, küçük bir çekirdek takımla.
 
@@ -136,7 +136,7 @@ Bu doküman fazları tamamlama **önceliğine** göre sıralar — önce auth ve
 
 ---
 
-## Şu an Endüstri Skalasında Nerede Duruyoruz?
+## 🛫 Havayolu Operasyonel Optimizasyon Proje Durumu
 
 | Boyut | Şimdi | Endüstri | Fark |
 |---|---|---|---|

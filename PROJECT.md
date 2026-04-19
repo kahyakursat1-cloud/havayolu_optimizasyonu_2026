@@ -1,4 +1,4 @@
-# TEKNOFEST 2026 Proje Durumu
+# 🛫 Havayolu Operasyonel Optimizasyon Proje Durumu
 
 ## Mevcut Ürün Durumu
 Proje artık konsept seviyesinden çıkıp çalışan bir ürün prototipine dönüştürülmüştür.

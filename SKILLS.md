@@ -1,4 +1,4 @@
-# 🎯 TEKNOFEST 2026 Havayolu Optimizasyonu - Gerekli Yetkinlikler
+# 🎯 Havayolu Optimizasyonu - Gerekli Yetkinlikler ve Teknik Domain Bilgisi
 
 Bu doküman, projenin başarılı bir şekilde tamamlanması için gereken teknik yetkinlikleri ve ekip yapılanmasını detaylandırmaktadır.
 

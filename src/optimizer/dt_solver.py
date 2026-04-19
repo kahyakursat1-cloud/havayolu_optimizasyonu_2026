@@ -182,11 +182,13 @@ class DigitalTwinSolver:
         recovered.attrs['recovery_mode'] = 'ga_local_search'
         return recovered
 
-    def solve_winning(self, strategy: str = "PROFIT", max_time_sec=60):
+    def solve_winning(self, strategy: str = "PROFIT", max_time_sec=60, num_workers=None, hub_closures=None):
         """
         Solve the airline assignment problem using CP-SAT.
         v22.0: Supports Strategy-based objective toggles.
+        hub_closures: dict mapping (airport, hour) to capacity (e.g. 0 for closure)
         """
+        hub_closures = hub_closures or {}
         logger.info(f"--- v22.0 CP-SAT SOLVER Engagement | Strategy: {strategy} ---")
 
         F = self.flights.index.tolist()
@@ -240,11 +242,17 @@ class DigitalTwinSolver:
         # Airport throughput capacity. This approximates tactical slot and stand pressure
         # by limiting how many departures/arrivals can remain active in the same hour.
         for (airport, hour), flights in departure_buckets.items():
-            capacity = self._estimate_airport_hour_capacity(airport)
+            h = hour.hour if hasattr(hour, 'hour') else int(hour)
+            capacity = hub_closures.get((airport, h), None)
+            if capacity is None:
+                capacity = self._estimate_airport_hour_capacity(airport)
             model.Add(sum(1 - z[f] for f in flights) <= capacity)
 
         for (airport, hour), flights in arrival_buckets.items():
-            capacity = max(2, self._estimate_airport_hour_capacity(airport) - 1)
+            h = hour.hour if hasattr(hour, 'hour') else int(hour)
+            capacity = hub_closures.get((airport, h), None)
+            if capacity is None:
+                capacity = max(2, self._estimate_airport_hour_capacity(airport) - 1)
             model.Add(sum(1 - z[f] for f in flights) <= capacity)
 
         # Maintenance & Turnaround Conflicts
@@ -349,6 +357,8 @@ class DigitalTwinSolver:
 
         solver = cp_model.CpSolver()
         solver.parameters.max_time_in_seconds = max_time_sec
+        if num_workers:
+            solver.parameters.num_search_workers = num_workers
         status = solver.Solve(model)
 
         if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
@@ -370,7 +380,7 @@ class DigitalTwinSolver:
             f"Solver timed out after {max_time_sec}s without a feasible solution (status={status_name})"
         )
 
-    def solve_with_windows(self, strategy: str = "PROFIT", window_size_hrs=4):
+    def solve_with_windows(self, strategy: str = "PROFIT", window_size_hrs=4, num_workers=None, hub_closures=None):
         sorted_flights = self.flights.sort_values('departure_time').copy()
         start_time = sorted_flights['departure_time'].min()
         end_time = sorted_flights['departure_time'].max()
@@ -386,7 +396,7 @@ class DigitalTwinSolver:
             if not window_df.empty:
                 window_solver = DigitalTwinSolver(window_df)
                 try:
-                    res = window_solver.solve_winning(strategy=strategy, max_time_sec=5)
+                    res = window_solver.solve_winning(strategy=strategy, max_time_sec=5, num_workers=num_workers, hub_closures=hub_closures)
                     full_results.append(res)
                 except SolverError as e:
                     logger.warning(f"Window [{current_start}..{current_end}] solve failed: {e}")

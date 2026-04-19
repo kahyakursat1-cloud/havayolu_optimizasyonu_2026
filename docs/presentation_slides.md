@@ -1,4 +1,4 @@
-# 📽️ TEKNOFEST 2026: Havayolu Dijital İkizi Karar Destek Sistemi
+# 📽️ Havayolu Operasyonel Dijital İkizi Karar Destek Sistemi
 ## Şampiyonluk Sunumu Taslağı (Winning Pitch)
 
 ### 📊 SLAYT 1: Kapak

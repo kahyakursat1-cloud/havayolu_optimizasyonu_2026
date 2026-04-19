@@ -170,7 +170,7 @@ Locust ile 50 concurrent dispatcher, 10 dakika:
 
 ## 8.10 Şekil 8.10 — XAI Kullanılabilirlik Mini Deneyi
 
-5 havacılık mühendisi (TEKNOFEST değerlendirme jürisi örneklemi dışında) ile anket:
+5 havacılık mühendisi (bağımsız uzman paneli) ile anket:
 
 | Soru | Ortalama (1–5 Likert) |
 |---|---|

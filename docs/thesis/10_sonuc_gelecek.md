@@ -69,8 +69,7 @@ Bu tez; havayolu operasyonlarında aksaklık yönetimi (IROPS) problemine, **kı
 
 Bu tezde geliştirilen sistem:
 
-- **TEKNOFEST 2026** Havayolu Optimizasyonu yarışmasının değerlendirilmesinde kullanılacak
-- Açık kaynak olarak yayımlanarak diğer araştırmacıların yararına sunulacak
+- Geliştirilen modelin daha geniş ölçekli havayolu ağlarında ve gerçek operasyonel ortamlarda test edilmesi; araştırmacıların yararına sunulacak
 - Türkiye'de sivil havacılık AI/XAI sertifikasyonu çalışmalarına somut bir referans olacak
 - Endüstri tarafından "yol haritası" (PRODUCT_ROADMAP.md + INDUSTRY_ROADMAP.md) ile izlenebilir bir ürünleştirme şablonu sağlayacak
 

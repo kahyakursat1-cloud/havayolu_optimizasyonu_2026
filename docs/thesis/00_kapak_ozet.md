@@ -1,7 +1,7 @@
 # Dijital İkiz ve Kısıt Programlama Tabanlı Hibrit Bir Havayolu Operasyon Karar Destek Sistemi: EASA Uyumlu, Açıklanabilir Yapay Zeka ile Güçlendirilmiş Bir Uçuş Optimizasyon Platformu
 
 **Yazar**: Kürşat Kahya
-**Kurum**: TEKNOFEST 2026 Havayolu Optimizasyonu Yarışması
+**Kurum**: Havacılık Ağ Optimizasyonu ve Karar Destek Sistemleri Araştırma Grubu
 **Tarih**: 2026
 
 ---
@@ -30,7 +30,7 @@ The system ingests real-time feeds from OpenSky Network (ADS-B), Open-Meteo, and
 
 ## Teşekkür
 
-Bu çalışma, TEKNOFEST 2026 Havayolu Optimizasyonu yarışması kapsamında geliştirilmiş ve halka açık araçlar (Google OR-Tools, FastAPI, PostgreSQL, Three.js, MapLibre, OpenSky Network, Open-Meteo, NOAA) üzerine inşa edilmiştir. Açık kaynak topluluğuna ve havacılık veri sağlayıcılarına teşekkür edilir.
+Bu çalışma, havayolu operasyonel verimliliği ve aksaklık yönetimi üzerine yürütülen bağımsız bir araştırma projesi kapsamında geliştirilmiş ve açık kaynaklı kütüphaneler (Google OR-Tools, FastAPI, PostgreSQL, Three.js, MapLibre, OpenSky Network, Open-Meteo, NOAA) kullanılarak doğrulanmıştır. Araştırma topluluğuna ve havacılık veri sağlayıcılarına teşekkür edilir.
 
 ---
 

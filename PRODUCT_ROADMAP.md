@@ -1,6 +1,6 @@
 # Ürünleştirme Yol Haritası (Ücretsiz / Self-Hosted)
 
-**Hedef**: TEKNOFEST prototipini gerçek kullanıcıların açıp kullanabileceği, kalıcı veri tutan, canlı feed'li, izlenebilir bir **ürün** haline getirmek.
+**Hedef**: Mevcut prototipi gerçek havayolu operasyonlarında kullanılabilecek, ölçeklenebilir ve kurumsal seviyede bir **ürün** haline getirmek.
 **Kapsam dışı**: ISO 27001 / SOC 2 sertifikasyonu, ticari GDS (Sabre/Amadeus), SITA/Eurocontrol B2B, kurumsal SLA.
 **Tahmini süre**: 8–12 hafta, tek geliştirici.
 **Maliyet**: 0 TL (hosting için isteğe bağlı ~4 €/ay Hetzner VPS).

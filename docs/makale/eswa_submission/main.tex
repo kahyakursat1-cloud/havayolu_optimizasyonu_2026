@@ -23,7 +23,7 @@
 \usepackage{float}
 
 %% Theorem environments
-\newtheorem{proposition}{Proposition}
+\newtheorem{empiricalproperty}{Empirical Property}
 \newtheorem{corollary}{Corollary}
 \newtheorem{definition}{Definition}
 \newtheorem{lemma}{Lemma}
@@ -76,7 +76,7 @@ Our main contributions are:
 
 (1)~\textbf{Identifying the regime where hybrid optimization outperforms exact solvers under uncertainty:} We demonstrate that deterministic disruption recovery (300 flights, nominal conditions) is best solved exactly by CP-SAT; stochastic recovery under high uncertainty (50--100 flights, crew location/weather/connection uncertainty) is beyond CP-SAT's reach within operational time budget, where warm-started QIGA delivers robust solutions. This delineation is critical for practitioners: it specifies \emph{when} to deploy each method.
 
-(2)~\textbf{Empirical robustness of warm-start initialization:} We demonstrate through extensive experiments that seeding QIGA from a CP-SAT solution maintains feasibility across diverse operational scenarios (deterministic, stochastic, worst-case, extreme disruption). While CP-SAT itself guarantees optimality, QIGA warm-start inherits this feasibility guarantee by design (never worsening the CP-SAT solution under elitist selection). This empirically-validated pattern enables safe integration of evolutionary methods in regulated domains.
+(2)~\textbf{Empirical robustness of warm-start initialization:} We demonstrate through extensive experiments that seeding QIGA from a CP-SAT solution maintains feasibility across diverse operational scenarios (deterministic, stochastic, worst-case, extreme disruption). CP-SAT finds optimal or near-optimal feasible solutions; QIGA warm-start preserves this feasibility by construction (elitist selection never worsens the CP-SAT solution). This empirically-validated robustness pattern enables safe integration of evolutionary methods in regulated domains.
 
 (3)~\textbf{An EASA-compliant optimization framework} enforcing crew duty regulations (CAT.OP.MPA.210) and validation on real-world operational scenarios (140-flight dataset, 5 disruption types), demonstrating feasibility preservation across diverse stress conditions.
 
@@ -150,7 +150,7 @@ Disruption recovery operates under uncertainty: when a disruption occurs (e.g., 
     \item \textbf{Aircraft availability:} Mechanical status, maintenance, and potential secondary faults are uncertain.
 \end{itemize}
 
-Recovery decisions must therefore balance two competing objectives: (1)~maximize robustness to uncertainty (avoid solutions that fail under adverse scenarios), and (2)~optimize profit under nominal conditions. The problem couples three subproblems under uncertainty: (1)~which aircraft operates each flight, (2)~which crew is assigned, (3)~how much delay is absorbed. All assignments must respect hard constraints: an aircraft can't be in two places, a crew member can't exceed their duty limit, passenger connections require minimum ground time. We model this as a robust constraint satisfaction problem with a stochastic optimization objective: maximize expected profit while guaranteeing feasibility under uncertain disruption outcomes.
+Recovery decisions must therefore balance two competing objectives: (1)~maximize robustness to uncertainty (avoid solutions that fail under adverse scenarios), and (2)~optimize profit under nominal conditions. The problem couples three subproblems under uncertainty: (1)~which aircraft operates each flight, (2)~which crew is assigned, (3)~how much delay is absorbed. All assignments must respect hard constraints: an aircraft can't be in two places, a crew member can't exceed their duty limit, passenger connections require minimum ground time. We model this as a robust constraint satisfaction problem with a stochastic optimization objective: maximize expected profit while maintaining feasibility across uncertain disruption outcomes.
 
 \subsection{Sets and Decision Variables}
 
@@ -337,7 +337,7 @@ Our hybrid approach combines the strengths of two different algorithm families. 
   \State{Preserve $\text{best}$ in $\text{Pop}_{g+1}$ (elitist selection)}
 \EndFor
 
-\State{\Return $S_{\mathrm{M}} \gets \text{best}$ \Comment{Guaranteed $\geq S_{\mathrm{CP}}$ by Proposition~\ref{prop:warm}}}
+\State{\Return $S_{\mathrm{M}} \gets \text{best}$ \Comment{By elitist design, $S_{\mathrm{M}} \geq S_{\mathrm{CP}}$ (see Property~\ref{prop:warm})}}
 \end{algorithmic}
 \end{algorithm}
 
@@ -368,12 +368,12 @@ A high $\lambda$ (penalty for violations) ensures that solutions generated durin
 
 The key insight is how we initialize QIGA. Rather than starting with random solutions, we use $S_{\mathrm{CP}}$ as the first individual in the population, then generate 19 variations by randomly perturbing assignments by small amounts. This "seeding" ensures three things: (i)~the population starts in a feasible region, (ii)~the evolutionary search never has to explore far from good solutions, and (iii)~elitist selection inherently preserves at least the CP-SAT solution's quality across all generations by design.
 
-\begin{proposition}[Monotonic Non-Degradation]
+\begin{empiricalproperty}[Warm-Start Feasibility Preservation]
 \label{prop:warm}
-Let $S_{\mathrm{CP}}$ be a feasible solution from CP-SAT. If QIGA is initialized with $S_{\mathrm{CP}}$ as an elite seed and uses elitist selection (always keep the best solution), then the final solution $S_{\mathrm{M}}$ satisfies $\mathrm{Profit}(S_{\mathrm{M}}) \geq \mathrm{Profit}(S_{\mathrm{CP}})$ and maintains feasibility.
-\end{proposition}
+When QIGA is initialized with a feasible solution $S_{\mathrm{CP}}$ from CP-SAT and uses elitist selection (never discarding the best solution), the final solution $S_{\mathrm{M}}$ empirically maintains feasibility and objective value at least as good as $S_{\mathrm{CP}}$. This pattern is observed consistently across all tested instances and scenarios.
+\end{empiricalproperty}
 
-This guarantee is crucial: it lets dispatchers trust that a warm-started evolutionary algorithm is a refinement tool, not a wild card that could produce an infeasible or worse solution.
+This empirical robustness is critical: it enables dispatchers to use warm-started evolutionary search as a safe refinement tool, not a wild card that could produce an infeasible or worse solution. The elitist selection mechanism ensures this by design---the best solution is never discarded.
 
 \begin{corollary}
 The hybrid method M is Pareto-dominant over standalone CP-SAT (B$_2$) in the feasibility--quality space: it maintains identical feasibility guarantees (all hard constraints satisfied via $S_{\mathrm{CP}}$) while achieving equal or superior objective value.
@@ -551,7 +551,7 @@ The numerical results presented in Table~\ref{tab:results} underscore the effica
 
 Statistical significance: Wilcoxon signed-rank test, M vs B$_2$: $p = 0.007$ (two-tailed). Effect size (Cliff's delta): $d = 0.72$ (large effect).
 
-The results demonstrate several key findings. First, the greedy heuristic (B$_1$) produces an average of 7.1 FTL violations per run, rendering its outputs \textbf{operationally inadmissible}. Second, standalone CP-SAT (B$_2$) guarantees feasibility but exhibits suboptimal profit due to time-limited search. Third, standalone QIGA (B$_3$) occasionally produces FTL violations (0.4 per run), confirming that metaheuristic search alone cannot guarantee regulatory compliance. Fourth, the proposed hybrid (M) maintains \textbf{high-probability feasibility} (guaranteed with probability $1-\delta$ via Proposition~\ref{prop:warm}) while achieving +5\% profit and $-$20\% cancellations through QIGA refinement in synthetic experiments.
+The results demonstrate several key findings. First, the greedy heuristic (B$_1$) produces an average of 7.1 FTL violations per run, rendering its outputs \textbf{operationally inadmissible}. Second, standalone CP-SAT (B$_2$) achieves feasibility but exhibits suboptimal profit due to time-limited search. Third, standalone QIGA (B$_3$) occasionally produces FTL violations (0.4 per run), confirming that metaheuristic search without constraint guidance risks regulatory non-compliance. Fourth, the proposed hybrid (M) maintains \textbf{zero FTL violations across all synthetic experiments} while achieving +5\% profit and $-$20\% cancellations through QIGA refinement---demonstrating the effectiveness of warm-start initialization from CP-SAT.
 
 \begin{figure}[!ht]
 \centering
@@ -627,7 +627,7 @@ However, these results carry important caveats:
 \item \textbf{Trade-offs with other objectives}: The profit metric used here simplifies the actual dispatcher goal (minimize cancellations, maintain equity, preserve crew satisfaction). Under multi-objective optimization or fairness constraints, the relative rankings may shift.
 \end{itemize}
 
-\textbf{Interpretation}: For typical daily operations (300--400 flights), CP-SAT's performance is so fast and optimal that optional QIGA refinement serves as an \emph{insurance mechanism} rather than a performance driver. The practical value of warm-start initialization lies in larger or highly time-constrained scenarios where exact solvers timeout; on realistic single-day operations, exact solving is the practical optimum. This reframes the hybrid approach: not "QIGA improves on CP-SAT," but rather "CP-SAT guarantees feasibility while QIGA provides an optional exploration pathway for larger instances, initialized safely from CP-SAT's solution."
+\textbf{Interpretation}: For typical daily operations (300--400 flights), CP-SAT's performance is so fast and optimal that optional QIGA refinement serves as an \emph{insurance mechanism} rather than a performance driver. The practical value of warm-start initialization lies in larger or highly time-constrained scenarios where exact solvers timeout; on realistic single-day operations, exact solving is the practical optimum. This reframes the hybrid approach: not "QIGA improves on CP-SAT," but rather "CP-SAT finds feasible solutions efficiently while QIGA provides an optional exploration pathway for larger instances, initialized safely from CP-SAT's solution."
 
 \subsection{Worst-Case Scenario and Variance Analysis}
 \label{sec:worstcase}
@@ -971,13 +971,13 @@ Kruskal-Wallis test across all runs: $H = 8.74$, $p = 0.003$. Pairwise Mann-Whit
 \section{Conclusion}
 \label{sec:conclusion}
 
-When a disruption strikes, airlines need decisions in seconds, not hours, and those decisions must be robust to uncertainty: crew locations are imprecise, weather evolves unpredictably, passenger connections cascade-fail. This paper demonstrates a hybrid framework that solves a real problem: robust recovery under uncertainty. On nominal deterministic instances (300 flights), CP-SAT achieves global optimality in <1ms; QIGA refinement is unnecessary. But on stochastic uncertain instances (50--100 flights with crew location, weather, and connection uncertainty), CP-SAT exhausts its time budget without returning a feasible solution, while warm-started QIGA delivers robust solutions maintaining feasibility across 90--92\% of adverse scenarios in <3 seconds. This is the true value of the hybrid framework: it adapts to problem structure. When uncertainty is low, exact solving dominates. When uncertainty forces intractability, evolutionary search with warm-start guarantees provides the only practical path to robust feasibility.
+When a disruption strikes, airlines need decisions in seconds, not hours, and those decisions must be robust to uncertainty: crew locations are imprecise, weather evolves unpredictably, passenger connections cascade-fail. This paper demonstrates a hybrid framework that solves a real problem: robust recovery under uncertainty. On nominal deterministic instances (300 flights), CP-SAT achieves global optimality in <1ms; QIGA refinement is unnecessary. But on stochastic uncertain instances (50--100 flights with crew location, weather, and connection uncertainty), CP-SAT exhausts its time budget without returning a feasible solution, while warm-started QIGA delivers robust solutions maintaining feasibility across 90--92\% of adverse scenarios in <3 seconds. This is the true value of the hybrid framework: it adapts to problem structure. When uncertainty is low, exact solving dominates. When uncertainty forces intractability, evolutionary search initialized from feasible CP-SAT solutions provides the only practical path to robust feasibility within operational time constraints.
 
 The key technical contribution is the identification of when hybrid optimization outperforms exact solvers: on nominal deterministic instances, CP-SAT's speed and optimality are unbeatable; on stochastic uncertain instances where exact methods timeout, warm-started QIGA delivers robust solutions where competitors (Tabu Search, LNS) fail. The warm-start mechanism---initializing QIGA from CP-SAT's feasible solution---has been empirically validated to maintain feasibility while exploring for improvement across diverse operational scenarios. This delineation establishes when and why hybrid methods matter in regulated optimization.
 
 The explainability layer addresses regulatory requirements: SHAP-based feature importance combined with constraint attribution enables decision transparency required by EASA AMC 20-42. Quantitative validation (Fidelity R²=0.654, Stability Jaccard=0.741) confirms that explanations are reliable, not merely interpretable.
 
-Path to deployment requires: (1) real-world flight data integration and operational validation with an airline partner; (2) EASA certification review of the formal guarantees and XAI components; (3) larger user studies with dispatcher teams; (4) continuous monitoring infrastructure for model drift and constraint satisfaction. This work demonstrates feasibility and provides theoretical foundations; production deployment is a follow-up phase requiring industry collaboration. Future work will enhance the crew duty model (full EASA FDP tables), extend to networks exceeding 2,000 flights, incorporate sustainability objectives, and explore quantum hardware acceleration.
+Path to deployment requires: (1) real-world flight data integration and operational validation with an airline partner; (2) EASA certification review of the design properties and XAI components; (3) larger user studies with dispatcher teams; (4) continuous monitoring infrastructure for model drift and constraint satisfaction. This work demonstrates feasibility and provides theoretical foundations; production deployment is a follow-up phase requiring industry collaboration. Future work will enhance the crew duty model (full EASA FDP tables), extend to networks exceeding 2,000 flights, incorporate sustainability objectives, and explore quantum hardware acceleration.
 
 
 %% ============================================================

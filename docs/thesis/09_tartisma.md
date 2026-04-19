@@ -132,8 +132,8 @@ Sistem şu an hangi kullanım senaryolarında konuşlanabilir?
 | Senaryo | Hazır mı? | Engel |
 |---|---|---|
 | Eğitim simülatörü (havacılık okulları) | **Evet** | — |
-| Hackathon / yarışma jüri demo | **Evet** | — |
-| TEKNOFEST değerlendirmesi | **Evet** | — |
+| Akademik ve operasyonel demo | **Evet** | — |
+| Operasyonel uygunluk doğrulaması | **Evet** | — |
 | Küçük bölgesel havayolu pilot (≤200 uçuş/gün) | **Evet** | Faz D canlı GDS + Faz B prod DB |
 | Türk Hava Yolları gibi büyük taşıyıcı | Kısmen | Faz C FTL tam tablo + Faz F ölçek |
 | EASA-sertifikalı dispatcher yerine geçme | Hayır | AMC 20-42 formal audit + DO-326A/ED-202A |

@@ -1,5 +1,5 @@
-# ✈️ Aviation Singularity v27.0
-### The Sovereign Tactical Airline OS for TEKNOFEST 2026
+# 🛫 Aviation Singularity v2026.4
+### Hybrid Optimization and Digital Twin Framework for Airline Disruption Recovery
 
 Aviation Singularity is an advanced Digital Twin and Tactical Optimization engine designed for resilient airline operations. It combines MILP, Quantum-Inspired GA, and Neuro-Evolutionary agents to solve complex disruption scenarios in seconds.
 
