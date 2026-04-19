@@ -1,0 +1,86 @@
+{
+  "results": [
+    {
+      "mode": "single",
+      "status": "OK",
+      "wallclock_sec": 25.789,
+      "n_flights": 141,
+      "n_canceled": 63,
+      "cancellation_rate": 0.4468,
+      "ftl_violations": 46,
+      "mean_delay_min": 0.0,
+      "scale": "1d",
+      "label": "\u2248135 flights (1 day)",
+      "days": 1
+    },
+    {
+      "mode": "rolling",
+      "status": "OK",
+      "wallclock_sec": 4.177,
+      "hybrid_fallback_count": 0,
+      "n_flights": 141,
+      "n_canceled": 75,
+      "cancellation_rate": 0.5319,
+      "ftl_violations": 46,
+      "mean_delay_min": 0.0,
+      "scale": "1d",
+      "label": "\u2248135 flights (1 day)",
+      "days": 1
+    },
+    {
+      "mode": "single",
+      "status": "OK",
+      "wallclock_sec": 324.635,
+      "n_flights": 561,
+      "n_canceled": 347,
+      "cancellation_rate": 0.6185,
+      "ftl_violations": 109,
+      "mean_delay_min": 0.0,
+      "scale": "4d",
+      "label": "\u2248540 flights (4 days)",
+      "days": 4
+    },
+    {
+      "mode": "rolling",
+      "status": "OK",
+      "wallclock_sec": 19.176,
+      "hybrid_fallback_count": 0,
+      "n_flights": 561,
+      "n_canceled": 295,
+      "cancellation_rate": 0.5258,
+      "ftl_violations": 109,
+      "mean_delay_min": 0.0,
+      "scale": "4d",
+      "label": "\u2248540 flights (4 days)",
+      "days": 4
+    },
+    {
+      "mode": "rolling",
+      "status": "OK",
+      "wallclock_sec": 36.985,
+      "hybrid_fallback_count": 0,
+      "n_flights": 1109,
+      "n_canceled": 568,
+      "cancellation_rate": 0.5122,
+      "ftl_violations": 120,
+      "mean_delay_min": 0.0,
+      "scale": "8d",
+      "label": "\u22481080 flights (8 days)",
+      "days": 8
+    },
+    {
+      "mode": "rolling",
+      "status": "OK",
+      "wallclock_sec": 50.776,
+      "hybrid_fallback_count": 0,
+      "n_flights": 1617,
+      "n_canceled": 822,
+      "cancellation_rate": 0.5083,
+      "ftl_violations": 120,
+      "mean_delay_min": 0.0,
+      "scale": "12d",
+      "label": "\u22481620 flights (12 days)",
+      "days": 12
+    }
+  ]
+}

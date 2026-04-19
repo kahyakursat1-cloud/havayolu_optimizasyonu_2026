@@ -1,0 +1,53 @@
+{
+  "results": [
+    {
+      "method": "CP-SAT",
+      "status": "OK",
+      "wallclock_sec": 22.987,
+      "n_flights": 141,
+      "n_canceled": 63,
+      "cancellation_rate": 0.4468,
+      "mean_delay_min": 0.0,
+      "profit_tl": "22535300",
+      "dataset_size": 141,
+      "n_crews": 81
+    },
+    {
+      "method": "Tabu Search",
+      "status": "OK(166624 iterations)",
+      "wallclock_sec": 60.001,
+      "n_flights": 141,
+      "n_canceled": 0,
+      "cancellation_rate": 0.0,
+      "mean_delay_min": 0.0,
+      "profit_tl": "25685300",
+      "dataset_size": 141,
+      "n_crews": 81
+    },
+    {
+      "method": "LNS",
+      "status": "OK(53594 iterations)",
+      "wallclock_sec": 60.001,
+      "n_flights": 141,
+      "n_canceled": 0,
+      "cancellation_rate": 0.0,
+      "mean_delay_min": 0.0,
+      "profit_tl": "25685300",
+      "dataset_size": 141,
+      "n_crews": 81
+    },
+    {
+      "method": "Hybrid (CP-SAT + QIGA)",
+      "status": "OK",
+      "wallclock_sec": 4.835,
+      "n_flights": 141,
+      "n_canceled": 75,
+      "cancellation_rate": 0.5319,
+      "mean_delay_min": 0.0,
+      "profit_tl": "21935300",
+      "dataset_size": 141,
+      "n_crews": 81
+    }
+  ],
+  "timestamp": "2026-04-20T00:46:56.787486"
+}

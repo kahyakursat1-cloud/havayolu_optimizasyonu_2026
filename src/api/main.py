@@ -710,7 +710,7 @@ async def export_decision_report_xlsx(filter: str = "all"):
 # Background Tasks
 async def brain_evolution_loop():
     while True:
-        await asyncio.sleep(600)
+        await asyncio.sleep(3600)
         evolution_engine.evolve_model()
 
 @app.websocket("/api/ws")

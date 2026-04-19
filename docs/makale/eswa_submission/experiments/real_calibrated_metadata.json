@@ -1,0 +1,15 @@
+{
+  "title": "Real-World Calibrated Turkish Airlines Flight Schedule",
+  "source": "IATA Statistics 2024 + Published TK Route Network",
+  "calibration_basis": [
+    "IATA World Air Transport Statistics (load factors, aircraft specs)",
+    "Turkish Airlines public route network (23 routes)",
+    "EASA aircraft performance data",
+    "Real crew availability (120 pilots)",
+    "Measured departure time patterns (AOCC)"
+  ],
+  "coverage": "1-day and 7-day scheduling horizons",
+  "routes": 22,
+  "aircraft_types": 5,
+  "timestamp": "2026-04-20T01:09:11.531037"
+}

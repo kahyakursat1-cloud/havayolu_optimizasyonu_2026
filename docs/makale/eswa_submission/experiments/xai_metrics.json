@@ -1,0 +1,20 @@
+{
+  "xai_metrics": [
+    {
+      "metric": "Fidelity (R\u00b2)",
+      "value": 0.6542,
+      "interpretation": "How well SHAP predicts true feature importance"
+    },
+    {
+      "metric": "Stability (Jaccard@5)",
+      "value": 0.7407,
+      "interpretation": "Consistency of top-5 features under input perturbation"
+    },
+    {
+      "metric": "Robustness (Std Dev of Importance)",
+      "value": 0.0186,
+      "interpretation": "Lower = more consistent explanations across model variations"
+    }
+  ],
+  "timestamp": "2026-04-20T00:47:59.367719"
+}

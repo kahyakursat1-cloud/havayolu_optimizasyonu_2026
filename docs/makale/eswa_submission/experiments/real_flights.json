@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "source": "opensky_flights_all",
+    "window_utc": [
+      "2026-04-19T19:43:42+00:00",
+      "2026-04-19T21:43:42+00:00"
+    ],
+    "attempted_at": "2026-04-19T21:43:42+00:00",
+    "network_filter_hits": 0,
+    "fallback_reason": "no_tk_network_hits",
+    "mode": "semi_real_calibrated",
+    "calibration_basis": "TK 2024 annual report load factor 83.5%, published stage lengths"
+  },
+  "n_records": 140
+}

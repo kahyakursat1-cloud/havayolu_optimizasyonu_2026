@@ -1,0 +1,39 @@
+{
+  "dataset": "Real-World Calibrated (300 flights, IATA-calibrated)",
+  "results": [
+    {
+      "method": "CP-SAT (Exact)",
+      "profit_tl": 84949100.0,
+      "cancellations": 0,
+      "delay_min_avg": 0,
+      "solve_time_sec": 0.0007560253143310547
+    },
+    {
+      "method": "Tabu Search",
+      "profit_tl": 82511482.24773474,
+      "cancellations": 45,
+      "delay_min_avg": 12.50785015101751,
+      "solve_time_sec": 0.0010254383087158203
+    },
+    {
+      "method": "LNS",
+      "profit_tl": 84811434.46451995,
+      "cancellations": 0,
+      "delay_min_avg": 9.177702365337064,
+      "solve_time_sec": 0.013150453567504883
+    },
+    {
+      "method": "CP-SAT + QIGA (Proposed)",
+      "profit_tl": 84380892.7298449,
+      "cancellations": 10,
+      "delay_min_avg": 4.547151343673138,
+      "solve_time_sec": 0.0008730888366699219
+    }
+  ],
+  "summary": {
+    "baseline_method": "CP-SAT (Exact)",
+    "best_method": "CP-SAT (Exact)",
+    "improvement_pct": -0.16205649674929132,
+    "timestamp": "2026-04-20T01:09:55.995646"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "sensitivity_results": [
+    {
+      "ftl_limit_min": 540,
+      "feasibility_rate": 0.8935,
+      "cancellation_count": 15,
+      "profit_tl": 1340189.0,
+      "solve_time_sec": 45.0,
+      "violations": 15
+    },
+    {
+      "ftl_limit_min": 600,
+      "feasibility_rate": 1.0,
+      "cancellation_count": 0,
+      "profit_tl": 1590000.0,
+      "solve_time_sec": 50.0,
+      "violations": 0
+    },
+    {
+      "ftl_limit_min": 720,
+      "feasibility_rate": 1.0,
+      "cancellation_count": 0,
+      "profit_tl": 1770000.0,
+      "solve_time_sec": 60.0,
+      "violations": 0
+    },
+    {
+      "ftl_limit_min": 840,
+      "feasibility_rate": 1.0,
+      "cancellation_count": 0,
+      "profit_tl": 1950000.0,
+      "solve_time_sec": 70.0,
+      "violations": 0
+    }
+  ],
+  "recommendation": "600-minute threshold optimal for operational deployment",
+  "timestamp": "2026-04-20T00:47:59.719027"
+}
