@@ -1,5 +1,5 @@
-- Novel hybrid CP-SAT and QIGA framework for airline disruption recovery.
-- Warm-start coupling ensures feasibility while enabling metaheuristic refinement.
-- Monotonic non-degradation of solution quality proven via formal proposition.
-- Integrated dual-layer explainability (SHAP + Reason Codes) for EASA compliance.
-- Achieved 5% profit increase and 20% cancellation reduction in 150-flight network.
+- Hybrid CP-SAT and warm-started QIGA framework for airline disruption recovery.
+- Four-regime map governed by CP-SAT's residual optimality gap delineates when hybrid optimisation helps and when it hurts.
+- Warm-start preserves feasibility unconditionally; worst-case objective regression is bounded to -0.7% by the Q-bit measurement drift phenomenon.
+- Bidirectional SHAP-to-constraint coupling links pre-diagnostic features to binding constraints, targeting EASA AMC 20-42 traceability.
+- Validated across five instance families up to 1,617 flights over 12 days using rolling-horizon decomposition; FTL sensitivity analysis confirms regulator-safe encoding.

@@ -6,34 +6,34 @@
       "profit_tl": 84949100.0,
       "cancellations": 0,
       "delay_min_avg": 0,
-      "solve_time_sec": 0.0007560253143310547
+      "solve_time_sec": 0.0006601810455322266
     },
     {
       "method": "Tabu Search",
-      "profit_tl": 82511482.24773474,
+      "profit_tl": 82515901.10354984,
       "cancellations": 45,
-      "delay_min_avg": 12.50785015101751,
-      "solve_time_sec": 0.0010254383087158203
+      "delay_min_avg": 12.213259763344096,
+      "solve_time_sec": 0.0011692047119140625
     },
     {
       "method": "LNS",
-      "profit_tl": 84811434.46451995,
+      "profit_tl": 84816009.25233902,
       "cancellations": 0,
-      "delay_min_avg": 9.177702365337064,
-      "solve_time_sec": 0.013150453567504883
+      "delay_min_avg": 8.872716510732213,
+      "solve_time_sec": 0.012883663177490234
     },
     {
       "method": "CP-SAT + QIGA (Proposed)",
-      "profit_tl": 84380892.7298449,
-      "cancellations": 10,
-      "delay_min_avg": 4.547151343673138,
-      "solve_time_sec": 0.0008730888366699219
+      "profit_tl": 84330599.91231743,
+      "cancellations": 11,
+      "delay_min_avg": 4.5666725121713,
+      "solve_time_sec": 0.0008363723754882812
     }
   ],
   "summary": {
     "baseline_method": "CP-SAT (Exact)",
     "best_method": "CP-SAT (Exact)",
-    "improvement_pct": -0.16205649674929132,
-    "timestamp": "2026-04-20T01:09:55.995646"
+    "improvement_pct": -0.15667116857150887,
+    "timestamp": "2026-04-20T12:15:54.511586"
   }
 }

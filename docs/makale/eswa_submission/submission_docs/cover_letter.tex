@@ -3,8 +3,8 @@
 \usepackage{geometry}
 \geometry{a4paper, margin=2.5cm}
 
-\signature{Kürşat Kahya \\ Independent Researcher}
-\address{Istanbul, Turkey}
+\signature{K\"ur\c{s}at Kahya \\ Department of Aviation and Space Sciences \\ \c{C}ukurova Science and Art Center, Adana, T\"urkiye}
+\address{Adana, T\"urkiye}
 
 \begin{document}
 
@@ -12,20 +12,25 @@
 
 \opening{Dear Professor Lin,}
 
-I am pleased to submit our original research manuscript entitled \textbf{``Hybrid CP-SAT and Quantum-Inspired Optimization for Airline Disruption Recovery with Explainable Decision Support''} for consideration for publication in \textit{Expert Systems with Applications}.
+I am pleased to submit the original research manuscript entitled \textbf{``Hybrid CP-SAT and Quantum-Inspired Optimization for Airline Disruption Recovery with Explainable Decision Support''} for consideration in \textit{Expert Systems with Applications}.
 
-Airline disruption management is a critical operational challenge where exact mathematical optimization often struggles with real-time constraints, and metaheuristics struggle with strict regulatory feasibility. Our study presents three key innovations that address these gaps:
+Airline disruption management is a safety-critical real-time problem in which exact solvers can time out, metaheuristics can violate regulatory constraints, and explainability is frequently treated as an afterthought. The manuscript makes three concrete contributions that target these gaps:
+
 \begin{enumerate}
-    \item A novel hybrid architecture that couples Google OR-Tools CP-SAT with a Quantum-Inspired Genetic Algorithm (QIGA) via a warm-start mechanism, achieving a 5\% profit increase over standalone exact methods.
-    \item A formal mathematical proof (Proposition 1) demonstrating the monotonic non-degradation property of the warm-start coupling, ensuring feasibility is maintained while refinement occurs.
-    \item A dual-layer explainability framework (SHAP + Constraint Reason Codes) that provides transparency aligned with the EASA AMC 20-42 regulatory guidelines.
+    \item \textbf{A regime-dependent map of hybrid value.} We empirically map airline disruption recovery into four operational regimes governed by CP-SAT's residual optimality gap: (i)~deterministic-converged (RealCal-300, gap $= 0$): CP-SAT alone closes the problem in ${\sim}10$\,ms and warm-started QIGA introduces a bounded $-0.7\%$ regression; (i$^\prime$)~deterministic-gap-bounded (Baseline-150, gap ${\approx}2\%$): warm-started QIGA exploits the gap and improves the objective by ${\sim}5\%$; (ii)~stochastic uncertain (50--100 flights): CP-SAT cannot return a feasible solution and QIGA becomes the only practical path; (iii)~multi-day large-scale (up to 1{,}617 flights): monolithic CP-SAT runs out of memory and rolling-horizon decomposition is required. The novelty is in identifying \emph{when} hybrid optimisation helps and \emph{when} it hurts---a question the literature has not previously delineated.
+
+    \item \textbf{A warm-start safety pattern formalised through Q-bit measurement drift.} The mechanism we adopt preserves feasibility \emph{unconditionally} and bounds the worst-case objective regression to $-0.7\%$ on already-converged instances. We formalise the source of this bounded regression---Q-bit measurement drift in the QIGA encoding---as an \emph{Empirical Property} rather than as a strict monotonic-improvement guarantee that the data does not support. This honest formulation is, in our view, more useful to deploying engineers than an over-claim.
+
+    \item \textbf{A bidirectional SHAP-to-constraint explainability layer.} Eight high-attribution features from an XGBoost pre-diagnostic model are explicitly coupled to the CP-SAT constraints whose right-hand side, coefficient, or activation condition they modulate. This produces a single causal chain (feature $\rightarrow$ constraint $\rightarrow$ decision reason) that targets the traceability requirement of EASA AMC 20-42, separately from the CAT.OP.MPA.210 flight-time-limit compliance handled by the CP-SAT model itself.
 \end{enumerate}
 
-We believe this work is well-aligned with the scope of \textit{Expert Systems with Applications}, as it presents an intelligent system designed for complex, industrial combinatorial optimization and integrates modern explainability techniques for safety-critical decision support.
+Validation is end-to-end and includes five distinct instance families (Baseline-150, RealCal-300, Stochastic-50/100, SysVal-140 on the real Turkish Airlines route network, and Scale-1/4/8/12d for multi-day scalability), a sensitivity analysis on the EASA FTL ceiling, worst-case stress overlays, and a calibration check against the November 2023 Turkish Airlines disruption. We have made the limitations of our approach---synthetic data, modest XAI user study, absence of an a-priori upper bound on Q-bit measurement drift---explicit in a dedicated section.
 
-This manuscript is original work and has not been published elsewhere, nor is it currently under consideration by another journal. All authors have approved the manuscript for submission and have no conflicts of interest to disclose.
+We believe this work is a strong fit for \textit{Expert Systems with Applications}: it presents an intelligent decision-support system for an industrial combinatorial optimisation problem, integrates modern explainability techniques for a safety-critical regulated setting, and reports its results with the kind of regime-aware honesty that we hope expert-systems readers will find useful in their own deployments.
 
-Thank you for your time and consideration of our work.
+This manuscript is original work, has not been published elsewhere, and is not currently under consideration by another journal. All authors have approved the submission. No conflicts of interest are declared. An anonymised snapshot of the experimental scripts and synthetic datasets used to produce the numerical results is provided in the supplementary materials; upon acceptance it will be re-hosted at a permanent DOI (Zenodo).
+
+Thank you for your consideration of our work.
 
 \closing{Sincerely,}
 

@@ -4,174 +4,220 @@
 \providecommand\HyField@AuxAddToCoFields[2]{}
 \emailauthor{kahyakursat1@gmail.com}{K\"ur\c {s}at Kahya\corref {cor1}}
 \Newlabel{cor1}{1}
-\Newlabel{cska}{a}
 \citation{iata2024}
+\citation{hu2024}
 \citation{ball2010}
 \citation{barnhart2004}
-\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}{section.1}\protected@file@percent }
-\newlabel{sec:introduction}{{1}{2}{Introduction}{section.1}{}}
+\Newlabel{cska}{a}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:introduction}{{1}{1}{Introduction}{section.1}{}}
 \citation{perron2023,laborie2018}
 \citation{zhang2011}
 \citation{easa2023}
-\citation{barnhart1998}
-\citation{abara1989}
+\citation{han2002}
+\citation{barnhart1998,desrosiers2005}
+\citation{abara1989,hane1995,rexing2000,sherali2006}
+\citation{rosenberger2003}
+\citation{stojkovic2002}
+\citation{yen2006}
+\citation{ball2007,hu2024}
+\citation{barnhart2003}
+\citation{rossi2006,laborie2018}
+\citation{perron2023}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{3}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{2}{3}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Exact Methods for Airline Recovery}{3}{subsection.2.1}\protected@file@percent }
+\citation{levine1996,ozdemir2001}
+\citation{liu2010}
+\citation{han2002}
+\citation{zhang2011}
+\citation{ahmadbeygi2008,gui2020,jacquillat2015}
+\citation{chen2016}
+\citation{ribeiro2016}
 \citation{lundberg2017}
-\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{6}{section.2}\protected@file@percent }
-\newlabel{sec:related}{{2}{6}{Related Work}{section.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Exact Methods: Optimal But Slow}{6}{subsection.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Fast Heuristics: Quick But Risky}{6}{subsection.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Explainability: Currently an Afterthought}{6}{subsection.2.3}\protected@file@percent }
+\citation{lundberg2020}
+\citation{wachter2018}
+\citation{arrieta2020}
+\citation{nauta2023}
 \citation{barnhart1998}
 \citation{rexing2000}
 \citation{laborie2018}
-\citation{levine1996}
-\citation{han2002}
+\citation{levine1996,liu2010}
+\citation{han2002,zhang2011}
 \citation{gui2020}
 \citation{rosenberger2003}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}The Gap: No Satisfactory Combination}{7}{subsection.2.4}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Comparative positioning of the proposed approach in the literature. \emph  {Abbreviations:} CBLS = Constraint-Based Local Search; IROPS = Irregular Operations (disruption recovery); QIGA = Quantum-Inspired Genetic Algorithm.}}{7}{table.caption.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Metaheuristic and Learning-based Methods}{4}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Explainability for Optimisation Decisions}{4}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}The Gap and How This Paper Addresses It}{4}{subsection.2.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Comparative positioning of the proposed approach in the literature. \emph  {Abbreviations:} CBLS = Constraint-Based Local Search; IROPS = Irregular Operations (disruption recovery); QIGA = Quantum-Inspired Genetic Algorithm.}}{5}{table.caption.1}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{tab:lit}{{1}{7}{Comparative positioning of the proposed approach in the literature. \emph {Abbreviations:} CBLS = Constraint-Based Local Search; IROPS = Irregular Operations (disruption recovery); QIGA = Quantum-Inspired Genetic Algorithm}{table.caption.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3}Problem Formulation}{8}{section.3}\protected@file@percent }
-\newlabel{sec:formulation}{{3}{8}{Problem Formulation}{section.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Problem Description}{8}{subsection.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Sets and Decision Variables}{9}{subsection.3.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Decision variables of the CP-SAT model.}}{9}{table.caption.2}\protected@file@percent }
-\newlabel{tab:vars}{{2}{9}{Decision variables of the CP-SAT model}{table.caption.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Constraints}{9}{subsection.3.3}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Constraint families.}}{10}{table.caption.3}\protected@file@percent }
-\newlabel{tab:constraints}{{3}{10}{Constraint families}{table.caption.3}{}}
-\newlabel{eq:c1}{{1}{10}{Constraints}{equation.3.1}{}}
-\newlabel{eq:c2}{{2}{10}{Constraints}{equation.3.2}{}}
-\newlabel{eq:c3}{{3}{11}{Constraints}{equation.3.3}{}}
-\newlabel{eq:c4}{{4}{11}{Constraints}{equation.3.4}{}}
-\newlabel{eq:c5}{{5}{11}{Constraints}{equation.3.5}{}}
-\newlabel{eq:c6}{{6}{11}{Constraints}{equation.3.6}{}}
-\newlabel{eq:c7}{{7}{12}{Constraints}{equation.3.7}{}}
-\newlabel{eq:c8}{{8}{12}{Constraints}{equation.3.8}{}}
-\newlabel{eq:c9}{{9}{12}{Constraints}{equation.3.9}{}}
-\newlabel{eq:c10}{{10}{12}{Constraints}{equation.3.10}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Objective Function}{12}{subsection.3.4}\protected@file@percent }
-\newlabel{eq:obj}{{11}{12}{Objective Function}{equation.3.11}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Strategy weight configurations.}}{13}{table.caption.4}\protected@file@percent }
-\newlabel{tab:weights}{{4}{13}{Strategy weight configurations}{table.caption.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Complexity Analysis}{13}{subsection.3.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Hybrid Optimization Framework}{13}{section.4}\protected@file@percent }
-\newlabel{sec:framework}{{4}{13}{Hybrid Optimization Framework}{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Overview}{13}{subsection.4.1}\protected@file@percent }
+\newlabel{tab:lit}{{1}{5}{Comparative positioning of the proposed approach in the literature. \emph {Abbreviations:} CBLS = Constraint-Based Local Search; IROPS = Irregular Operations (disruption recovery); QIGA = Quantum-Inspired Genetic Algorithm}{table.caption.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Problem Formulation}{5}{section.3}\protected@file@percent }
+\newlabel{sec:formulation}{{3}{5}{Problem Formulation}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Problem Description}{5}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Sets and Decision Variables}{5}{subsection.3.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Decision variables of the CP-SAT model.}}{6}{table.caption.2}\protected@file@percent }
+\newlabel{tab:vars}{{2}{6}{Decision variables of the CP-SAT model}{table.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Constraints}{6}{subsection.3.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Constraint families.}}{6}{table.caption.3}\protected@file@percent }
+\newlabel{tab:constraints}{{3}{6}{Constraint families}{table.caption.3}{}}
+\newlabel{eq:c1}{{1}{6}{Constraints}{equation.3.1}{}}
+\newlabel{eq:c2}{{2}{6}{Constraints}{equation.3.2}{}}
+\newlabel{eq:c3}{{3}{6}{Constraints}{equation.3.3}{}}
+\newlabel{eq:c4}{{4}{6}{Constraints}{equation.3.4}{}}
+\newlabel{eq:c5}{{5}{6}{Constraints}{equation.3.5}{}}
+\citation{easa2022}
+\newlabel{eq:c6}{{6}{7}{Constraints}{equation.3.6}{}}
+\newlabel{eq:c7}{{7}{7}{Constraints}{equation.3.7}{}}
+\newlabel{eq:c8}{{8}{7}{Constraints}{equation.3.8}{}}
+\newlabel{eq:c9}{{9}{7}{Constraints}{equation.3.9}{}}
+\newlabel{eq:c10}{{10}{7}{Constraints}{equation.3.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Objective Function}{7}{subsection.3.4}\protected@file@percent }
+\newlabel{eq:obj}{{11}{7}{Objective Function}{equation.3.11}{}}
 \citation{perron2023}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Two-stage hybrid optimization architecture. The CP-SAT solver generates feasible solutions enforcing all hard constraints; QIGA refines via quantum-rotation-gate-driven population evolution initialized with the CP-SAT solution.}}{14}{figure.caption.5}\protected@file@percent }
-\newlabel{fig:architecture}{{1}{14}{Two-stage hybrid optimization architecture. The CP-SAT solver generates feasible solutions enforcing all hard constraints; QIGA refines via quantum-rotation-gate-driven population evolution initialized with the CP-SAT solution}{figure.caption.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Stage 1: CP-SAT Feasible Solution Generation}{14}{subsection.4.2}\protected@file@percent }
-\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Hybrid CP-SAT + QIGA Framework}}{15}{algorithm.1}\protected@file@percent }
-\newlabel{alg:hybrid}{{1}{15}{Hybrid CP-SAT + QIGA Framework}{algorithm.1}{}}
 \citation{han2002}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Stage 2: Quantum-Inspired Genetic Algorithm (QIGA)}{16}{subsection.4.3}\protected@file@percent }
-\newlabel{eq:rotation}{{12}{16}{Stage 2: Quantum-Inspired Genetic Algorithm (QIGA)}{equation.4.12}{}}
-\newlabel{eq:fitness}{{13}{16}{Stage 2: Quantum-Inspired Genetic Algorithm (QIGA)}{equation.4.13}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Warm-Start: The Critical Link}{17}{subsection.4.4}\protected@file@percent }
-\newlabel{prop:warm}{{1}{17}{Warm-Start Feasibility Preservation}{empiricalproperty.1}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces QIGA population evolution workflow with warm-start initialization from CP-SAT solution.}}{18}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:qiga}{{2}{18}{QIGA population evolution workflow with warm-start initialization from CP-SAT solution}{figure.caption.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Decision Reason Generation}{18}{subsection.4.5}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Decision reason codes and their triggering conditions.}}{19}{table.caption.7}\protected@file@percent }
-\newlabel{tab:reasons}{{5}{19}{Decision reason codes and their triggering conditions}{table.caption.7}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Explainability and Decision Transparency}{19}{section.5}\protected@file@percent }
-\newlabel{sec:xai}{{5}{19}{Explainability and Decision Transparency}{section.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Motivation}{19}{subsection.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Predictive Explainability via SHAP}{19}{subsection.5.2}\protected@file@percent }
+\citation{zhang2011}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Strategy weight configurations.}}{8}{table.caption.4}\protected@file@percent }
+\newlabel{tab:weights}{{4}{8}{Strategy weight configurations}{table.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Complexity Analysis}{8}{subsection.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Hybrid Optimization Framework}{8}{section.4}\protected@file@percent }
+\newlabel{sec:framework}{{4}{8}{Hybrid Optimization Framework}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Overview}{8}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Stage 1: CP-SAT Feasible Solution Generation}{8}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Stage 2: Quantum-Inspired Genetic Algorithm (QIGA)}{8}{subsection.4.3}\protected@file@percent }
+\newlabel{eq:rotation}{{12}{8}{Stage 2: Quantum-Inspired Genetic Algorithm (QIGA)}{equation.4.12}{}}
+\citation{han2002}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Two-stage hybrid optimization architecture. The CP-SAT solver generates a feasible solution enforcing all hard constraints; QIGA refines it via quantum-rotation-gate-driven population evolution initialised with the CP-SAT solution. The same pipeline is exercised differently per regime (Table~\ref {tab:method_selection}): on instances where CP-SAT converges (gap $=0$) the refinement stage runs but produces at most a bounded objective regression; on instances with a residual CP-SAT gap, QIGA closes that gap; on instances where CP-SAT times out, QIGA runs from the best partial CP-SAT assignment available.}}{9}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:architecture}{{1}{9}{Two-stage hybrid optimization architecture. The CP-SAT solver generates a feasible solution enforcing all hard constraints; QIGA refines it via quantum-rotation-gate-driven population evolution initialised with the CP-SAT solution. The same pipeline is exercised differently per regime (Table~\ref {tab:method_selection}): on instances where CP-SAT converges (gap $=0$) the refinement stage runs but produces at most a bounded objective regression; on instances with a residual CP-SAT gap, QIGA closes that gap; on instances where CP-SAT times out, QIGA runs from the best partial CP-SAT assignment available}{figure.caption.5}{}}
+\newlabel{eq:fitness}{{13}{9}{Stage 2: Quantum-Inspired Genetic Algorithm (QIGA)}{equation.4.13}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Hybrid CP-SAT + QIGA Framework}}{10}{algorithm.1}\protected@file@percent }
+\newlabel{alg:hybrid}{{1}{10}{Hybrid CP-SAT + QIGA Framework}{algorithm.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Warm-Start: The Critical Link}{10}{subsection.4.4}\protected@file@percent }
+\citation{iata2023}
+\citation{iata2023}
+\newlabel{prop:warm}{{1}{11}{Feasibility Preservation with Bounded Regression}{empiricalproperty.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Decision Reason Generation}{11}{subsection.4.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Decision reason codes and their triggering conditions. The codes follow the spirit of the IATA standard delay-code taxonomy (AHM 730~\cite  {iata2023}) but extend it with constraint-attribution labels that are specific to the optimisation model.}}{11}{table.caption.8}\protected@file@percent }
+\newlabel{tab:reasons}{{5}{11}{Decision reason codes and their triggering conditions. The codes follow the spirit of the IATA standard delay-code taxonomy (AHM 730~\cite {iata2023}) but extend it with constraint-attribution labels that are specific to the optimisation model}{table.caption.8}{}}
+\citation{nauta2023}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces QIGA population evolution workflow with warm-start initialisation from the CP-SAT solution. Q-bit measurement is stochastic by construction, so the elite of each generation is a feasible chromosome \emph  {near} $S_{\mathrm  {CP}}$ rather than $S_{\mathrm  {CP}}$ exactly; this is the source of the bounded objective regression discussed in Empirical Property~\ref {prop:warm}.}}{12}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:qiga}{{2}{12}{QIGA population evolution workflow with warm-start initialisation from the CP-SAT solution. Q-bit measurement is stochastic by construction, so the elite of each generation is a feasible chromosome \emph {near} $S_{\mathrm {CP}}$ rather than $S_{\mathrm {CP}}$ exactly; this is the source of the bounded objective regression discussed in Empirical Property~\ref {prop:warm}}{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Explainability and Decision Transparency}{12}{section.5}\protected@file@percent }
+\newlabel{sec:xai}{{5}{12}{Explainability and Decision Transparency}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Motivation and Scope}{12}{subsection.5.1}\protected@file@percent }
 \citation{lundberg2020}
-\newlabel{eq:shap}{{14}{20}{Predictive Explainability via SHAP}{equation.5.14}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Optimization Traceability}{20}{subsection.5.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Connecting Features to Constraints}{20}{subsection.5.4}\protected@file@percent }
-\newlabel{sec:xai_coupling}{{5.4}{20}{Connecting Features to Constraints}{subsection.5.4}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces SHAP feature $\leftrightarrow $ CP-SAT constraint coupling. Each feature modulates a specific constraint's right-hand side, coefficient, or activation condition, ensuring that high-$|\phi _i|$ predictions have a traceable effect on the optimization model rather than being purely advisory.}}{22}{table.caption.8}\protected@file@percent }
-\newlabel{tab:xai_coupling}{{6}{22}{SHAP feature $\leftrightarrow $ CP-SAT constraint coupling. Each feature modulates a specific constraint's right-hand side, coefficient, or activation condition, ensuring that high-$|\phi _i|$ predictions have a traceable effect on the optimization model rather than being purely advisory}{table.caption.8}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}EASA AMC 20-42 Compliance Assessment}{23}{subsection.5.5}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces EASA AMC 20-42 compliance mapping.}}{23}{table.caption.9}\protected@file@percent }
-\newlabel{tab:easa}{{7}{23}{EASA AMC 20-42 compliance mapping}{table.caption.9}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Experimental Evaluation}{23}{section.6}\protected@file@percent }
-\newlabel{sec:experiments}{{6}{23}{Experimental Evaluation}{section.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Experimental Setup}{23}{subsection.6.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Experimental configuration.}}{24}{table.caption.10}\protected@file@percent }
-\newlabel{tab:config}{{8}{24}{Experimental configuration}{table.caption.10}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Compared Methods}{25}{subsection.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Comparative Performance}{25}{subsection.6.3}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Performance comparison (average $\pm $ 95\% CI over 10 runs).}}{25}{table.caption.11}\protected@file@percent }
-\newlabel{tab:results}{{9}{25}{Performance comparison (average $\pm $ 95\% CI over 10 runs)}{table.caption.11}{}}
-\newlabel{fig:perf}{{3a}{27}{Comparative performance across methods}{figure.caption.12}{}}
-\newlabel{sub@fig:perf}{{a}{27}{Comparative performance across methods}{figure.caption.12}{}}
-\newlabel{fig:conv}{{3b}{27}{CP-SAT convergence behavior}{figure.caption.12}{}}
-\newlabel{sub@fig:conv}{{b}{27}{CP-SAT convergence behavior}{figure.caption.12}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces (a) Grouped bar chart comparing KPIs across four methods. (b) CP-SAT solver convergence showing upper/lower bound gap narrowing from 38\% to 2.1\% over 60 seconds.}}{27}{figure.caption.12}\protected@file@percent }
-\newlabel{fig:results}{{3}{27}{(a) Grouped bar chart comparing KPIs across four methods. (b) CP-SAT solver convergence showing upper/lower bound gap narrowing from 38\% to 2.1\% over 60 seconds}{figure.caption.12}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Method Selection Guide: When Does Each Approach Win?}{27}{subsection.6.4}\protected@file@percent }
-\newlabel{sec:method_selection}{{6.4}{27}{Method Selection Guide: When Does Each Approach Win?}{subsection.6.4}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces Method selection guide: Which approach to use based on problem characteristics.}}{27}{table.caption.13}\protected@file@percent }
-\newlabel{tab:method_selection}{{10}{27}{Method selection guide: Which approach to use based on problem characteristics}{table.caption.13}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Real-World Validation: IATA-Calibrated Data}{28}{subsection.6.5}\protected@file@percent }
-\newlabel{sec:realdata}{{6.5}{28}{Real-World Validation: IATA-Calibrated Data}{subsection.6.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces Real-world calibrated data: Baseline method comparison (300-flight instance).}}{28}{table.caption.14}\protected@file@percent }
-\newlabel{tab:realdata}{{11}{28}{Real-world calibrated data: Baseline method comparison (300-flight instance)}{table.caption.14}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Worst-Case Scenario and Variance Analysis}{30}{subsection.6.6}\protected@file@percent }
-\newlabel{sec:worstcase}{{6.6}{30}{Worst-Case Scenario and Variance Analysis}{subsection.6.6}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces Performance under stress: Worst-case scenario (simultaneous hub closure, crew shortage, weather) with variance.}}{31}{table.caption.15}\protected@file@percent }
-\newlabel{tab:worstcase}{{12}{31}{Performance under stress: Worst-case scenario (simultaneous hub closure, crew shortage, weather) with variance}{table.caption.15}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.7}Stochastic Disruption Instances: When the Hybrid Framework Wins}{32}{subsection.6.7}\protected@file@percent }
-\newlabel{sec:stochastic}{{6.7}{32}{Stochastic Disruption Instances: When the Hybrid Framework Wins}{subsection.6.7}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.7.1}Uncertainty Model}{32}{subsubsection.6.7.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.7.2}Results: Small Instances with Uncertainty}{33}{subsubsection.6.7.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces Hybrid framework performance on stochastic disruption instances (50 \& 100 flights with crew location, weather, and connection uncertainty).}}{33}{table.caption.16}\protected@file@percent }
-\newlabel{tab:stochastic}{{13}{33}{Hybrid framework performance on stochastic disruption instances (50 \& 100 flights with crew location, weather, and connection uncertainty)}{table.caption.16}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.8}Ablation Study}{34}{subsection.6.8}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {14}{\ignorespaces Ablation study isolating component contributions.}}{34}{table.caption.17}\protected@file@percent }
-\newlabel{tab:ablation}{{14}{34}{Ablation study isolating component contributions}{table.caption.17}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.9}Scenario-Based Robustness}{35}{subsection.6.9}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {15}{\ignorespaces Cancellation rates under five stress scenarios (\% of total flights).}}{35}{table.caption.18}\protected@file@percent }
-\newlabel{tab:scenarios}{{15}{35}{Cancellation rates under five stress scenarios (\% of total flights)}{table.caption.18}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Scenario-based robustness analysis---cancellation rates under five stress scenarios.}}{36}{figure.caption.19}\protected@file@percent }
-\newlabel{fig:scenarios}{{4}{36}{Scenario-based robustness analysis---cancellation rates under five stress scenarios}{figure.caption.19}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.10}FTL Validation}{36}{subsection.6.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.11}Scalability and Complexity Management}{36}{subsection.6.11}\protected@file@percent }
-\newlabel{sec:scalability}{{6.11}{36}{Scalability and Complexity Management}{subsection.6.11}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {16}{\ignorespaces Scalability results: Monolithic CP-SAT vs. Rolling Horizon Decomposition.}}{37}{table.caption.20}\protected@file@percent }
-\newlabel{tab:scale}{{16}{37}{Scalability results: Monolithic CP-SAT vs. Rolling Horizon Decomposition}{table.caption.20}{}}
-\citation{iata2023}
-\citation{iata2023}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Scalability performance comparison. (a) Execution time showing the exponential growth of monolithic CP-SAT vs. linear scaling of Rolling Horizon. (b) Solution quality (cancellation rates) remaining stable across scales. (c) Strict enforcement of EASA FTL violations maintained via the decomposition layer.}}{38}{figure.caption.21}\protected@file@percent }
-\newlabel{fig:scalability_chart}{{5}{38}{Scalability performance comparison. (a) Execution time showing the exponential growth of monolithic CP-SAT vs. linear scaling of Rolling Horizon. (b) Solution quality (cancellation rates) remaining stable across scales. (c) Strict enforcement of EASA FTL violations maintained via the decomposition layer}{figure.caption.21}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.12}SHAP Feature Importance}{38}{subsection.6.12}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.13}XAI Usability Assessment}{38}{subsection.6.13}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Aggregate SHAP feature importance across 150 flights. Weather risk and crew fatigue dominate, consistent with IATA delay code statistics \cite  {iata2023}.}}{39}{figure.caption.22}\protected@file@percent }
-\newlabel{fig:shap}{{6}{39}{Aggregate SHAP feature importance across 150 flights. Weather risk and crew fatigue dominate, consistent with IATA delay code statistics \cite {iata2023}}{figure.caption.22}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {17}{\ignorespaces Usability assessment results (5 aviation engineers, 1--5 Likert scale).}}{40}{table.caption.23}\protected@file@percent }
-\newlabel{tab:usability}{{17}{40}{Usability assessment results (5 aviation engineers, 1--5 Likert scale)}{table.caption.23}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.14}XAI Quantitative Evaluation}{40}{subsection.6.14}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {18}{\ignorespaces Quantitative XAI metrics: how well SHAP explanations capture true feature importance and remain consistent across variations.}}{40}{table.caption.24}\protected@file@percent }
-\newlabel{tab:xai_metrics}{{18}{40}{Quantitative XAI metrics: how well SHAP explanations capture true feature importance and remain consistent across variations}{table.caption.24}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Discussion}{41}{section.7}\protected@file@percent }
-\newlabel{sec:discussion}{{7}{41}{Discussion}{section.7}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Positioning Against Literature}{41}{subsection.7.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Why Warm-Start Matters and When It Applies}{41}{subsection.7.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Systematic Validation on Real-World Operational Scenarios}{41}{subsection.7.3}\protected@file@percent }
-\newlabel{sec:casestudy}{{7.3}{41}{Systematic Validation on Real-World Operational Scenarios}{subsection.7.3}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {19}{\ignorespaces Systematic Validation results: Real-world operational scenarios.}}{42}{table.caption.25}\protected@file@percent }
-\newlabel{tab:casestudy}{{19}{42}{Systematic Validation results: Real-world operational scenarios}{table.caption.25}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Data and Code Availability}{42}{subsection.7.4}\protected@file@percent }
-\newlabel{sec:reproducibility}{{7.4}{42}{Data and Code Availability}{subsection.7.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.5}XAI Causal Sensitivity and QIGA Search Space Analysis}{43}{subsection.7.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.6}Design Choice: EASA Crew Duty Simplification}{44}{subsection.7.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.7}Regulatory Compliance Validation: FTL Threshold Sensitivity}{45}{subsection.7.7}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {20}{\ignorespaces EASA FTL Threshold Sensitivity: Impact of duty-limit on solution feasibility, profitability, and solve time.}}{46}{table.caption.26}\protected@file@percent }
-\newlabel{tab:ftl_sensitivity}{{20}{46}{EASA FTL Threshold Sensitivity: Impact of duty-limit on solution feasibility, profitability, and solve time}{table.caption.26}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.8}Extended QIGA Ablation: Convergence Analysis}{46}{subsection.7.8}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces FTL threshold sensitivity analysis across four operating points (540, 600, 720, 840 minutes). Panel (a) shows feasibility dramatically drops below 600 min. Panel (b) reveals profit trade-off: relaxed thresholds gain +11--23\% but at operational cost. Panel (c) demonstrates that only the 600-min choice stays within the sub-5-second requirement for real-time dispatch.}}{47}{figure.caption.27}\protected@file@percent }
-\newlabel{fig:ftl_sensitivity}{{7}{47}{FTL threshold sensitivity analysis across four operating points (540, 600, 720, 840 minutes). Panel (a) shows feasibility dramatically drops below 600 min. Panel (b) reveals profit trade-off: relaxed thresholds gain +11--23\% but at operational cost. Panel (c) demonstrates that only the 600-min choice stays within the sub-5-second requirement for real-time dispatch}{figure.caption.27}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces QIGA convergence advantage quantified over 20 independent runs and 200 generations. Panel (a) shows median convergence (thick lines) with individual runs (thin, faded). QIGA achieves stable 5.3\% improvement by generation 100, while classical GA plateaus at 2\% and GA+elitism reaches 3.5\%. Panel (b) provides box-plot distributions at key generational milestones, confirming QIGA's superiority in both mean and variance reduction.}}{47}{figure.caption.28}\protected@file@percent }
-\newlabel{fig:convergence}{{8}{47}{QIGA convergence advantage quantified over 20 independent runs and 200 generations. Panel (a) shows median convergence (thick lines) with individual runs (thin, faded). QIGA achieves stable 5.3\% improvement by generation 100, while classical GA plateaus at 2\% and GA+elitism reaches 3.5\%. Panel (b) provides box-plot distributions at key generational milestones, confirming QIGA's superiority in both mean and variance reduction}{figure.caption.28}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.9}Limitations}{47}{subsection.7.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{49}{section.8}\protected@file@percent }
-\newlabel{sec:conclusion}{{8}{49}{Conclusion}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Pre-diagnostic Layer: SHAP Over XGBoost}{13}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:xai_prediag}{{5.2}{13}{Pre-diagnostic Layer: SHAP Over XGBoost}{subsection.5.2}{}}
+\newlabel{eq:shap}{{14}{13}{Pre-diagnostic Layer: SHAP Over XGBoost}{equation.5.14}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Decision-Trace Layer: Constraint Attribution from CP-SAT}{13}{subsection.5.3}\protected@file@percent }
+\newlabel{sec:xai_trace}{{5.3}{13}{Decision-Trace Layer: Constraint Attribution from CP-SAT}{subsection.5.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Connecting Features to Constraints}{13}{subsection.5.4}\protected@file@percent }
+\newlabel{sec:xai_coupling}{{5.4}{13}{Connecting Features to Constraints}{subsection.5.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces SHAP feature $\leftrightarrow $ CP-SAT constraint coupling. Each feature modulates a specific constraint's right-hand side, coefficient, or activation condition, ensuring that high-$|\phi _i|$ predictions have a traceable effect on the optimization model rather than being purely advisory.}}{14}{table.caption.9}\protected@file@percent }
+\newlabel{tab:xai_coupling}{{6}{14}{SHAP feature $\leftrightarrow $ CP-SAT constraint coupling. Each feature modulates a specific constraint's right-hand side, coefficient, or activation condition, ensuring that high-$|\phi _i|$ predictions have a traceable effect on the optimization model rather than being purely advisory}{table.caption.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Explainable AI (SHAP) feature importance ranking. The model identifies 'Weather Risk' and 'Crew Duty' as the primary drivers of recovery decisions. This transparent ranking satisfies EASA AMC 20-42 requirements for decision traceability.}}{15}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:shap}{{3}{15}{Explainable AI (SHAP) feature importance ranking. The model identifies 'Weather Risk' and 'Crew Duty' as the primary drivers of recovery decisions. This transparent ranking satisfies EASA AMC 20-42 requirements for decision traceability}{figure.caption.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}EASA AMC 20-42 Compliance Assessment}{15}{subsection.5.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces EASA AMC 20-42 compliance mapping. Status reflects what the framework demonstrates in this paper; items marked ``Planned'' are acknowledged in the Limitations.}}{15}{table.caption.11}\protected@file@percent }
+\newlabel{tab:easa}{{7}{15}{EASA AMC 20-42 compliance mapping. Status reflects what the framework demonstrates in this paper; items marked ``Planned'' are acknowledged in the Limitations}{table.caption.11}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Experimental Evaluation}{16}{section.6}\protected@file@percent }
+\newlabel{sec:experiments}{{6}{16}{Experimental Evaluation}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Experimental Setup}{16}{subsection.6.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Instance families used across the experiments. The same hardware and solver parameters (Table~\ref {tab:config}) apply in every experiment; only the problem size and uncertainty model change.}}{16}{table.caption.12}\protected@file@percent }
+\newlabel{tab:instances}{{8}{16}{Instance families used across the experiments. The same hardware and solver parameters (Table~\ref {tab:config}) apply in every experiment; only the problem size and uncertainty model change}{table.caption.12}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Common experimental configuration applied to every instance family in Table~\ref {tab:instances}.}}{16}{table.caption.13}\protected@file@percent }
+\newlabel{tab:config}{{9}{16}{Common experimental configuration applied to every instance family in Table~\ref {tab:instances}}{table.caption.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Data Sourcing and Validation}{17}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Compared Methods}{17}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Comparative Performance}{17}{subsection.6.4}\protected@file@percent }
+\newlabel{sec:comp_perf}{{6.4}{17}{Comparative Performance}{subsection.6.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces Performance comparison on the Baseline-150 instance family (150 flights, 20 aircraft, 40 crew; average $\pm $ 95\% CI over 10 runs).}}{17}{table.caption.14}\protected@file@percent }
+\newlabel{tab:results}{{10}{17}{Performance comparison on the Baseline-150 instance family (150 flights, 20 aircraft, 40 crew; average $\pm $ 95\% CI over 10 runs)}{table.caption.14}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Method Selection Guide: When Does Each Approach Win?}{18}{subsection.6.5}\protected@file@percent }
+\newlabel{sec:method_selection}{{6.5}{18}{Method Selection Guide: When Does Each Approach Win?}{subsection.6.5}{}}
+\newlabel{fig:perf}{{4a}{19}{Comparative performance across methods}{figure.caption.16}{}}
+\newlabel{sub@fig:perf}{{a}{19}{Comparative performance across methods}{figure.caption.16}{}}
+\newlabel{fig:conv}{{4b}{19}{CP-SAT convergence behavior}{figure.caption.16}{}}
+\newlabel{sub@fig:conv}{{b}{19}{CP-SAT convergence behavior}{figure.caption.16}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces (a) Grouped bar chart comparing KPIs across four methods. (b) CP-SAT solver convergence showing upper/lower bound gap narrowing from 38\% to 2.1\% over 60 seconds.}}{19}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:results}{{4}{19}{(a) Grouped bar chart comparing KPIs across four methods. (b) CP-SAT solver convergence showing upper/lower bound gap narrowing from 38\% to 2.1\% over 60 seconds}{figure.caption.16}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces Method selection guide tied to the experimental evidence in this paper. ``Hybrid'' denotes CP-SAT warm-started QIGA; ``RH'' denotes the rolling-horizon decomposition (Section~\ref {sec:scalability}).}}{19}{table.caption.17}\protected@file@percent }
+\newlabel{tab:method_selection}{{11}{19}{Method selection guide tied to the experimental evidence in this paper. ``Hybrid'' denotes CP-SAT warm-started QIGA; ``RH'' denotes the rolling-horizon decomposition (Section~\ref {sec:scalability})}{table.caption.17}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Real-World Validation: IATA-Calibrated Data}{19}{subsection.6.6}\protected@file@percent }
+\newlabel{sec:realdata}{{6.6}{19}{Real-World Validation: IATA-Calibrated Data}{subsection.6.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces RealCal-300: Baseline method comparison on the IATA-calibrated 300-flight instance (mean over 10 replicates; ``Time'' is the wall-clock time to the reported solution, not solver-internal time).}}{20}{table.caption.18}\protected@file@percent }
+\newlabel{tab:realdata}{{12}{20}{RealCal-300: Baseline method comparison on the IATA-calibrated 300-flight instance (mean over 10 replicates; ``Time'' is the wall-clock time to the reported solution, not solver-internal time)}{table.caption.18}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7}Worst-Case Scenario and Variance Analysis}{21}{subsection.6.7}\protected@file@percent }
+\newlabel{sec:worstcase}{{6.7}{21}{Worst-Case Scenario and Variance Analysis}{subsection.6.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces Performance under stress: Worst-case scenario (simultaneous hub closure, crew shortage, weather) with variance.}}{21}{table.caption.19}\protected@file@percent }
+\newlabel{tab:worstcase}{{13}{21}{Performance under stress: Worst-case scenario (simultaneous hub closure, crew shortage, weather) with variance}{table.caption.19}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.8}Stochastic Disruption Instances: Where Exact Methods Time Out}{21}{subsection.6.8}\protected@file@percent }
+\newlabel{sec:stochastic}{{6.8}{21}{Stochastic Disruption Instances: Where Exact Methods Time Out}{subsection.6.8}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.8.1}Uncertainty Model}{21}{subsubsection.6.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.8.2}Results: Small Instances with Uncertainty}{22}{subsubsection.6.8.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {14}{\ignorespaces Performance on stochastic disruption instances and the deterministic-nominal control variant. Instance labels match Table~\ref {tab:instances}. ``Profit'' is mean over 10 replicates; ``Feas.\%'' is the share of adverse scenarios in which the returned schedule remains feasible.}}{22}{table.caption.20}\protected@file@percent }
+\newlabel{tab:stochastic}{{14}{22}{Performance on stochastic disruption instances and the deterministic-nominal control variant. Instance labels match Table~\ref {tab:instances}. ``Profit'' is mean over 10 replicates; ``Feas.\%'' is the share of adverse scenarios in which the returned schedule remains feasible}{table.caption.20}{}}
+\citation{han2002}
+\citation{zhang2011}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.9}Ablation Study}{23}{subsection.6.9}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {15}{\ignorespaces Ablation study isolating component contributions.}}{23}{table.caption.21}\protected@file@percent }
+\newlabel{tab:ablation}{{15}{23}{Ablation study isolating component contributions}{table.caption.21}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.10}Scenario-Based Robustness}{23}{subsection.6.10}\protected@file@percent }
+\newlabel{sec:scenarios}{{6.10}{23}{Scenario-Based Robustness}{subsection.6.10}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {16}{\ignorespaces Cancellation rates under five stress scenarios (Baseline-150 instance, \% of total flights).}}{23}{table.caption.22}\protected@file@percent }
+\newlabel{tab:scenarios}{{16}{23}{Cancellation rates under five stress scenarios (Baseline-150 instance, \% of total flights)}{table.caption.22}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.11}FTL Enforcement Check (Unit Test)}{23}{subsection.6.11}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Scenario-based robustness analysis---cancellation rates under five stress scenarios.}}{24}{figure.caption.23}\protected@file@percent }
+\newlabel{fig:scenarios}{{5}{24}{Scenario-based robustness analysis---cancellation rates under five stress scenarios}{figure.caption.23}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.12}Scalability and Complexity Management}{24}{subsection.6.12}\protected@file@percent }
+\newlabel{sec:scalability}{{6.12}{24}{Scalability and Complexity Management}{subsection.6.12}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {17}{\ignorespaces Scalability results: Monolithic CP-SAT vs. Rolling Horizon Decomposition. ``OOM'' denotes an out-of-memory failure of the CP-SAT conflict-clause-learning engine at 32\,GB RAM, observed before the 60-second wall-clock budget elapses; the larger 12-day instance also exhibits the OOM mode.}}{24}{table.caption.25}\protected@file@percent }
+\newlabel{tab:scale}{{17}{24}{Scalability results: Monolithic CP-SAT vs. Rolling Horizon Decomposition. ``OOM'' denotes an out-of-memory failure of the CP-SAT conflict-clause-learning engine at 32\,GB RAM, observed before the 60-second wall-clock budget elapses; the larger 12-day instance also exhibits the OOM mode}{table.caption.25}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Scalability performance comparison. (a) Execution time showing the exponential growth of monolithic CP-SAT vs. linear scaling of Rolling Horizon. (b) Solution quality (cancellation rates) remaining stable across scales. (c) Strict enforcement of EASA FTL violations maintained via the decomposition layer.}}{25}{figure.caption.26}\protected@file@percent }
+\newlabel{fig:scalability_chart}{{6}{25}{Scalability performance comparison. (a) Execution time showing the exponential growth of monolithic CP-SAT vs. linear scaling of Rolling Horizon. (b) Solution quality (cancellation rates) remaining stable across scales. (c) Strict enforcement of EASA FTL violations maintained via the decomposition layer}{figure.caption.26}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.13}SHAP Feature Importance Distribution}{25}{subsection.6.13}\protected@file@percent }
+\citation{nielsen2012}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.14}XAI Usability Assessment}{26}{subsection.6.14}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {18}{\ignorespaces Usability assessment results (5 aviation engineers, 1--5 Likert scale).}}{26}{table.caption.27}\protected@file@percent }
+\newlabel{tab:usability}{{18}{26}{Usability assessment results (5 aviation engineers, 1--5 Likert scale)}{table.caption.27}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.15}XAI Quantitative Evaluation}{26}{subsection.6.15}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {19}{\ignorespaces Quantitative XAI metrics: how well SHAP explanations capture true feature importance and remain consistent across variations.}}{26}{table.caption.28}\protected@file@percent }
+\newlabel{tab:xai_metrics}{{19}{26}{Quantitative XAI metrics: how well SHAP explanations capture true feature importance and remain consistent across variations}{table.caption.28}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.16}Systematic Validation on Real-World Operational Scenarios}{26}{subsection.6.16}\protected@file@percent }
+\newlabel{sec:sys_val}{{6.16}{26}{Systematic Validation on Real-World Operational Scenarios}{subsection.6.16}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {20}{\ignorespaces SysVal-140 results: five operational disruption types on the real Turkish Airlines route network. Cancellation rates and solve times are mean values over 10 runs per scenario.}}{27}{table.caption.29}\protected@file@percent }
+\newlabel{tab:sys_val}{{20}{27}{SysVal-140 results: five operational disruption types on the real Turkish Airlines route network. Cancellation rates and solve times are mean values over 10 runs per scenario}{table.caption.29}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Case Study: Calibration Check Against the Turkish Airlines November 2023 Disruption}{27}{section.7}\protected@file@percent }
+\newlabel{sec:casestudy}{{7}{27}{Case Study: Calibration Check Against the Turkish Airlines November 2023 Disruption}{section.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Disruption Event: November 1, 2023, Istanbul}{27}{subsection.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Reconstruction and Optimization}{27}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.1}Strategy 1: Baseline (No Optimization)}{28}{subsubsection.7.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.2}Strategy 2: CP-SAT Optimization (Proposed Method)}{28}{subsubsection.7.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Calibration Check Against Reported Quantities}{28}{subsection.7.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {21}{\ignorespaces Case study calibration check: reconstructed model vs.\ publicly reported quantities for the Turkish Airlines disruption of November 1, 2023. The comparison covers \emph  {structural envelope only}; individual recovery decisions are not validated against the airline's internal logs (which are not public).}}{28}{table.caption.30}\protected@file@percent }
+\newlabel{tab:casestudy}{{21}{28}{Case study calibration check: reconstructed model vs.\ publicly reported quantities for the Turkish Airlines disruption of November 1, 2023. The comparison covers \emph {structural envelope only}; individual recovery decisions are not validated against the airline's internal logs (which are not public)}{table.caption.30}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}External Validity and Data Limitations}{29}{subsection.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.5}Implications for Manuscript Claims}{29}{subsection.7.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Discussion}{29}{section.8}\protected@file@percent }
+\newlabel{sec:discussion}{{8}{29}{Discussion}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Positioning Against Literature}{29}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}When Warm-Start Helps, When It Hurts, and Why}{30}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Data and Code Availability}{30}{subsection.8.3}\protected@file@percent }
+\newlabel{sec:reproducibility}{{8.3}{30}{Data and Code Availability}{subsection.8.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}XAI Causal Sensitivity and QIGA Search Space Analysis}{31}{subsection.8.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5}Design Choice: EASA Crew Duty Simplification}{31}{subsection.8.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.6}FTL Threshold Sensitivity Analysis}{32}{subsection.8.6}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {22}{\ignorespaces EASA FTL Threshold Sensitivity: Impact of duty-limit on solution feasibility, profitability, and solve time (30 replicates per threshold). ``Schedule infeasibility'' counts runs in which CP-SAT cannot complete a feasible schedule within the time budget; the model never produces FTL violations by construction.}}{32}{table.caption.31}\protected@file@percent }
+\newlabel{tab:ftl_sensitivity}{{22}{32}{EASA FTL Threshold Sensitivity: Impact of duty-limit on solution feasibility, profitability, and solve time (30 replicates per threshold). ``Schedule infeasibility'' counts runs in which CP-SAT cannot complete a feasible schedule within the time budget; the model never produces FTL violations by construction}{table.caption.31}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces FTL threshold sensitivity analysis across four operating points (540, 600, 720, 840 minutes). Panel~(a) shows the fraction of replicates in which CP-SAT can construct a complete feasible recovery within the time budget: the 540-minute ceiling forces infeasibility on half of the runs, while 600\,min and above always succeed. Panel~(b) reports the profit trade-off: relaxing the bound to 720 or 840\,min gains $+11$ to $+23\%$ but assumes crews with substantial extra rest, so those points cannot be used as a uniform ceiling. Panel~(c) shows solve time: only the 600-min choice stays inside the sub-minute operational requirement.}}{32}{figure.caption.32}\protected@file@percent }
+\newlabel{fig:ftl_sensitivity}{{7}{32}{FTL threshold sensitivity analysis across four operating points (540, 600, 720, 840 minutes). Panel~(a) shows the fraction of replicates in which CP-SAT can construct a complete feasible recovery within the time budget: the 540-minute ceiling forces infeasibility on half of the runs, while 600\,min and above always succeed. Panel~(b) reports the profit trade-off: relaxing the bound to 720 or 840\,min gains $+11$ to $+23\%$ but assumes crews with substantial extra rest, so those points cannot be used as a uniform ceiling. Panel~(c) shows solve time: only the 600-min choice stays inside the sub-minute operational requirement}{figure.caption.32}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.7}Extended QIGA Ablation: Convergence Analysis}{32}{subsection.8.7}\protected@file@percent }
+\newlabel{sec:ablation_conv}{{8.7}{32}{Extended QIGA Ablation: Convergence Analysis}{subsection.8.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces QIGA convergence advantage quantified over 20 independent runs and 200 generations. Panel (a) shows median convergence (thick lines) with individual runs (thin, faded). QIGA achieves stable 5.3\% improvement by generation 100, while classical GA plateaus at 2\% and GA+elitism reaches 3.5\%. Panel (b) provides box-plot distributions at key generational milestones, confirming QIGA's superiority in both mean and variance reduction.}}{33}{figure.caption.33}\protected@file@percent }
+\newlabel{fig:convergence}{{8}{33}{QIGA convergence advantage quantified over 20 independent runs and 200 generations. Panel (a) shows median convergence (thick lines) with individual runs (thin, faded). QIGA achieves stable 5.3\% improvement by generation 100, while classical GA plateaus at 2\% and GA+elitism reaches 3.5\%. Panel (b) provides box-plot distributions at key generational milestones, confirming QIGA's superiority in both mean and variance reduction}{figure.caption.33}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.8}Limitations}{33}{subsection.8.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion}{34}{section.9}\protected@file@percent }
+\newlabel{sec:conclusion}{{9}{34}{Conclusion}{section.9}{}}
 \bibcite{abara1989}{{1}{}{{}}{{}}}
 \bibcite{ahmadbeygi2008}{{2}{}{{}}{{}}}
 \bibcite{ball2007}{{3}{}{{}}{{}}}
@@ -206,14 +252,8 @@
 \bibcite{wachter2018}{{32}{}{{}}{{}}}
 \bibcite{yen2006}{{33}{}{{}}{{}}}
 \bibcite{zhang2011}{{34}{}{{}}{{}}}
-\bibcite{wang2024}{{35}{}{{}}{{}}}
-\bibcite{suimon2024}{{36}{}{{}}{{}}}
-\bibcite{mohammadi2024}{{37}{}{{}}{{}}}
-\bibcite{lundberg2023}{{38}{}{{}}{{}}}
-\@writefile{toc}{\let\numberline\tmptocnumberline}
-\@writefile{toc}{\contentsline {section}{\numberline {Appendix ~A}Analytical Support for Empirical Property 1: Warm-Start Feasibility Preservation}{56}{appendix.A}\protected@file@percent }
-\newlabel{app:prop1}{{Appendix ~A}{56}{Analytical Support for Empirical Property 1: Warm-Start Feasibility Preservation}{appendix.A}{}}
+\bibcite{liu2010}{{35}{}{{}}{{}}}
+\bibcite{hu2024}{{36}{}{{}}{{}}}
+\bibcite{nauta2023}{{37}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
-\@writefile{lot}{\contentsline {table}{\numberline {A.21}{\ignorespaces Empirical validation of warm-start robustness (100 independent runs).}}{61}{table.caption.37}\protected@file@percent }
-\newlabel{tab:prop1_validation}{{A.21}{61}{Empirical validation of warm-start robustness (100 independent runs)}{table.caption.37}{}}
-\gdef \@abspage@last{61}
+\gdef \@abspage@last{37}
